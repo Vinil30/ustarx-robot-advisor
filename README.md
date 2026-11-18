@@ -1,5 +1,7 @@
 # Robot Advisor: a fact-checked sales agent for USTARX AI
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Vinil30/ustarx-robot-advisor)
+
 An unofficial demo built for an interview with USTARX AI. It is a website assistant that helps a
 business pick the right robot, compares buying vs leasing, and captures qualified leads, and it
 **checks its own answer against the catalog before the customer sees it**.
