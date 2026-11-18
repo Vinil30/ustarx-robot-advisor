@@ -43,9 +43,12 @@ def get_graph():
     return _graph
 
 
+FEATURED = ["bellabot-pro", "agibot-x2-ultra", "agibot-d1-edu-pro", "agibot-c5"]
+
+
 @app.get("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", featured=[catalog.by_id[i] for i in FEATURED])
 
 
 @app.post("/api/chat")

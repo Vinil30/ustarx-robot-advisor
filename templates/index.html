@@ -6,130 +6,177 @@
 <title>Robot Advisor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #fbfaf8; --surface: #ffffff; --soft: #f3f1ed; --text: #1c1a17; --muted: #6f6a62; --faint: #a39d93;
-    --line: #e7e3dc; --accent: #1c1a17; --link: #3d5a80; --ok: #2f7a55; --warn: #a3620a; --bad: #b4232c;
+    --bg: #faf9f6; --surface: #ffffff; --soft: #f2efe9; --stage: #f5f3ee; --text: #1d1b18; --muted: #6e695f;
+    --faint: #a8a296; --line: #e6e1d8; --ink: #1d1b18; --link: #2f4f7a; --ok: #2d7650; --warn: #9a5c0c; --bad: #b0262f;
+    --shadow-sm: 0 1px 2px rgba(29,27,24,.05);
+    --shadow: 0 1px 2px rgba(29,27,24,.04), 0 10px 30px -12px rgba(29,27,24,.14);
+    --ease: cubic-bezier(.2,.7,.2,1);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #151413; --surface: #1d1c1a; --soft: #262422; --text: #ece8e1; --muted: #a8a299; --faint: #77726b;
-      --line: #33302c; --accent: #ece8e1; --link: #9db8dc; --ok: #6cc497; --warn: #e2a64b; --bad: #f08a90;
+      --bg: #141312; --surface: #1c1b19; --soft: #262421; --stage: #22201d; --text: #ede9e2; --muted: #a9a398;
+      --faint: #757067; --line: #312e2a; --ink: #ede9e2; --link: #a3bde0; --ok: #74c69d; --warn: #e3a857; --bad: #f0868d;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.3); --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -12px rgba(0,0,0,.6);
     }
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body { margin: 0; background: var(--bg); color: var(--text);
-         font: 16px/1.65 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
-  a { color: var(--link); }
-  button { font: inherit; cursor: pointer; }
+         font: 16px/1.7 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--link); text-decoration: none; }
+  button { font: inherit; cursor: pointer; color: inherit; }
   .serif { font-family: "Source Serif 4", Georgia, serif; }
+  .eyebrow { font-size: 11.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 
-  /* header */
-  header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent);
-           backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
-  .bar { max-width: 760px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: baseline; gap: 12px; }
-  .bar h1 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
-  .bar .sub { font-size: 13px; color: var(--muted); }
-  .bar nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
-  .bar nav a, .bar nav button { color: var(--muted); text-decoration: none; background: none; border: 0; padding: 0; }
-  .bar nav a:hover, .bar nav button:hover { color: var(--text); }
+  /* ---------- header ---------- */
+  header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 85%, transparent);
+           backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px);
+           border-bottom: 1px solid transparent; transition: border-color .3s var(--ease); }
+  header.scrolled { border-bottom-color: var(--line); }
+  .bar { max-width: 800px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+  .mark { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center;
+          font-family: "Source Serif 4", Georgia, serif; font-size: 17px; font-weight: 600; background: var(--surface); }
+  .bar h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+  .bar nav { margin-left: auto; display: flex; gap: 4px; }
+  .bar nav a, .bar nav button { font-size: 14px; color: var(--muted); padding: 6px 12px; border-radius: 99px;
+                                background: none; border: 0; transition: background .2s var(--ease), color .2s var(--ease); }
+  .bar nav a:hover, .bar nav button:hover { color: var(--text); background: var(--soft); }
 
-  /* conversation */
-  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 180px; }
-  .turn { margin-bottom: 30px; }
-  .fade { animation: fade .45s ease both; }
-  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  /* ---------- layout ---------- */
+  .wrap { max-width: 800px; margin: 0 auto; padding: 8px 24px 200px; }
+  .reveal { animation: reveal .6s var(--ease) both; }
+  @keyframes reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
+  /* ---------- welcome ---------- */
+  .hero { padding: 7vh 0 8px; text-align: center; }
+  .hero h2 { font-size: clamp(34px, 5.4vw, 52px); line-height: 1.08; font-weight: 400; letter-spacing: -.025em; margin: 14px 0 16px; }
+  .hero h2 em { font-style: italic; }
+  .hero p { color: var(--muted); max-width: 520px; margin: 0 auto; font-size: 17px; }
+  .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 44px 0 40px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 0 0 14px; text-align: left;
+          overflow: hidden; box-shadow: var(--shadow-sm); transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-color .35s; }
+  .tile:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: var(--faint); }
+  .tile .img { height: 150px; background: var(--stage); display: grid; place-items: center; margin-bottom: 12px; }
+  .tile img { max-width: 82%; max-height: 128px; object-fit: contain; transition: transform .5s var(--ease); }
+  .tile:hover img { transform: scale(1.05); }
+  .tile .t { padding: 0 14px; font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .tile .p { padding: 0 14px; font-size: 13px; color: var(--muted); }
+  .divider { display: flex; align-items: center; gap: 14px; margin: 0 0 6px; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .starters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .starter { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+             display: flex; gap: 12px; align-items: flex-start; transition: border-color .25s var(--ease), transform .25s var(--ease); }
+  .starter:hover { border-color: var(--faint); transform: translateY(-2px); }
+  .starter .k { font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: block; }
+  .starter .v { font-size: 14.5px; line-height: 1.45; display: block; margin-top: 2px; }
+  .starter .arrow { margin-left: auto; color: var(--faint); transition: transform .25s var(--ease), color .25s; }
+  .starter:hover .arrow { transform: translateX(3px); color: var(--text); }
+
+  /* ---------- conversation ---------- */
+  .turn { margin: 34px 0; }
   .q { display: flex; justify-content: flex-end; }
-  .q div { background: var(--soft); padding: 10px 16px; border-radius: 18px; max-width: 85%; }
+  .q div { background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 20px 20px 6px 20px; max-width: 80%; line-height: 1.55; }
+  .who { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .who .mark { width: 28px; height: 28px; font-size: 15px; }
+  .who span { font-size: 13px; font-weight: 600; }
+  .a { padding-left: 38px; }
+  .a .body p { margin: 0 0 12px; }
+  .a .body p:first-child { font-family: "Source Serif 4", Georgia, serif; font-size: 19px; line-height: 1.5; }
+  .a .body ul { list-style: none; margin: 0 0 14px; padding: 0; border-left: 2px solid var(--line); }
+  .a .body li { padding: 4px 0 4px 16px; }
+  .a .body b { font-weight: 600; }
+  .a p.ask { margin: 14px 0 0; padding: 12px 16px; background: var(--soft); border-radius: 12px; font-weight: 500; }
 
-  .a p { margin: 0 0 12px; }
-  .a ul { margin: 0 0 12px; padding-left: 20px; }
-  .a li { margin: 6px 0; padding-left: 2px; }
-  .a li::marker { color: var(--faint); }
-  .a b { font-weight: 600; }
-  .a .ask { font-weight: 500; }
+  .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin: 18px 0 8px; }
+  .card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+          overflow: hidden; color: inherit; box-shadow: var(--shadow-sm);
+          transition: transform .35s var(--ease), box-shadow .35s var(--ease), border-color .35s; }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: var(--faint); }
+  .card .img { height: 170px; background: var(--stage); display: grid; place-items: center; }
+  .card img { max-width: 80%; max-height: 146px; object-fit: contain; opacity: 0; transform: scale(.97);
+              transition: opacity .5s var(--ease), transform .5s var(--ease); }
+  .card img.in { opacity: 1; transform: none; }
+  .card:hover img.in { transform: scale(1.04); }
+  .card .body2 { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .card .name { font-family: "Source Serif 4", Georgia, serif; font-size: 19px; font-weight: 600; line-height: 1.25; margin: 4px 0 8px; }
+  .card .price { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+  .card .price b { font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+  .card .price span { font-size: 13px; color: var(--muted); }
+  .card .quote { font-size: 14px; color: var(--warn); margin-top: auto; }
+  .card .more { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; color: var(--link);
+                display: flex; justify-content: space-between; }
 
-  /* product cards */
-  .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin: 16px 0 6px; }
-  .product { display: flex; gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--line);
-             border-radius: 14px; padding: 12px; text-decoration: none; color: inherit;
-             transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
-  .product:hover { border-color: var(--faint); box-shadow: 0 6px 20px rgba(0,0,0,.06); transform: translateY(-1px); }
-  .thumb { width: 92px; height: 92px; flex-shrink: 0; border-radius: 10px; background: #fff; border: 1px solid var(--line);
-           display: grid; place-items: center; overflow: hidden; }
-  .thumb img { width: 100%; height: 100%; object-fit: contain; padding: 6px; opacity: 0; transition: opacity .4s ease; }
-  .thumb img.loaded { opacity: 1; }
-  .info { min-width: 0; }
-  .info .cat { font-size: 12px; color: var(--muted); }
-  .info .name { font-weight: 600; font-size: 16px; line-height: 1.3; margin: 1px 0 4px; }
-  .info .price { font-size: 15px; }
-  .info .price small { color: var(--muted); font-size: 13px; }
-  .info .quote { font-size: 14px; color: var(--warn); }
-  .info .view { font-size: 13px; color: var(--link); }
-
-  /* check line + trace */
-  .meta { margin-top: 10px; font-size: 13px; color: var(--muted); }
-  .meta .ok { color: var(--ok); } .meta .warn { color: var(--warn); }
-  details { margin-top: 6px; }
-  summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; display: inline-flex; gap: 6px; align-items: center; }
-  summary::-webkit-details-marker { display: none; }
-  summary::before { content: "›"; display: inline-block; transition: transform .2s ease; }
-  details[open] summary::before { transform: rotate(90deg); }
-  .trace { margin: 10px 0 0; padding: 12px 16px; border-left: 2px solid var(--line); font-size: 13.5px; color: var(--muted);
-           animation: fade .3s ease both; }
-  .trace ol { margin: 0; padding-left: 18px; }
-  .trace li { margin: 6px 0; }
+  .meta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .verified { display: inline-flex; align-items: center; gap: 7px; color: var(--ok); }
+  .verified::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+                      box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
+  .verified.warn { color: var(--warn); }
+  .how { background: none; border: 0; padding: 0; color: var(--muted); font-size: 13px; text-decoration: underline;
+         text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .how:hover { color: var(--text); text-decoration-color: currentColor; }
+  .trace { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s var(--ease); }
+  .trace.open { grid-template-rows: 1fr; }
+  .trace > div { overflow: hidden; }
+  .trace ol { list-style: none; margin: 14px 0 0; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line);
+              border-radius: 14px; font-size: 13.5px; color: var(--muted); counter-reset: s; }
+  .trace li { position: relative; padding: 6px 0 6px 30px; counter-increment: s; }
+  .trace li::before { content: counter(s); position: absolute; left: 0; top: 7px; width: 20px; height: 20px; border-radius: 50%;
+                      background: var(--soft); color: var(--text); font-size: 11px; font-weight: 600; display: grid; place-items: center; }
+  .trace li.ok::before { content: "✓"; background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+  .trace li.bad::before { content: "✕"; background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad); }
   .trace li b { color: var(--text); font-weight: 600; }
-  .trace .bad { color: var(--bad); }
+  .trace .tag { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin-left: 4px; }
   .trace code { font-size: 12.5px; background: var(--soft); padding: 1px 6px; border-radius: 5px; }
+  .trace .err { color: var(--bad); }
 
-  .typing { display: inline-flex; gap: 5px; padding: 8px 0; }
-  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); animation: pulse 1.2s infinite ease-in-out; }
-  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
-  @keyframes pulse { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
-  .error { color: var(--bad); font-size: 14px; }
+  .thinking { padding-left: 38px; color: var(--muted); font-size: 14.5px; display: flex; align-items: center; gap: 10px; }
+  .thinking .dots { display: inline-flex; gap: 4px; }
+  .thinking .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--faint); animation: pulse 1.2s infinite var(--ease); }
+  .thinking .dots i:nth-child(2) { animation-delay: .15s; } .thinking .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes pulse { 0%, 80%, 100% { opacity: .25; transform: none; } 40% { opacity: 1; transform: translateY(-2px); } }
+  .error { padding-left: 38px; color: var(--bad); font-size: 14px; }
 
-  /* welcome */
-  .welcome { padding: 6vh 0 10px; }
-  .welcome h2 { font-size: 38px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; margin: 0 0 12px; }
-  .welcome p { color: var(--muted); margin: 0 0 28px; max-width: 540px; }
-  .starters { display: grid; gap: 0; border-top: 1px solid var(--line); }
-  .starter { text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--text);
-             padding: 14px 4px; display: flex; justify-content: space-between; gap: 16px; transition: padding .2s ease, color .2s ease; }
-  .starter span { color: var(--muted); font-size: 14px; white-space: nowrap; }
-  .starter:hover { padding-left: 10px; }
-
-  /* composer */
-  .composer { position: fixed; left: 0; right: 0; bottom: 0; padding: 16px 20px 18px;
-              background: linear-gradient(to top, var(--bg) 70%, transparent); }
-  .composer form { max-width: 760px; margin: 0 auto; display: flex; gap: 8px; align-items: center; background: var(--surface);
-                   border: 1px solid var(--line); border-radius: 16px; padding: 6px 6px 6px 18px;
-                   box-shadow: 0 4px 24px rgba(0,0,0,.06); transition: border-color .2s ease; }
+  /* ---------- composer ---------- */
+  .composer { position: fixed; left: 0; right: 0; bottom: 0; padding: 28px 24px 16px;
+              background: linear-gradient(to top, var(--bg) 62%, color-mix(in srgb, var(--bg) 0%, transparent)); pointer-events: none; }
+  .composer > * { pointer-events: auto; }
+  .composer form { max-width: 800px; margin: 0 auto; display: flex; gap: 8px; align-items: center; background: var(--surface);
+                   border: 1px solid var(--line); border-radius: 99px; padding: 6px 6px 6px 22px; box-shadow: var(--shadow);
+                   transition: border-color .25s var(--ease), box-shadow .25s var(--ease); }
   .composer form:focus-within { border-color: var(--faint); }
-  .composer input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; padding: 9px 0; }
-  .composer button { height: 40px; padding: 0 18px; border: 0; border-radius: 11px; background: var(--accent); color: var(--bg);
-                     font-weight: 500; transition: opacity .2s ease; }
-  .composer button:disabled { opacity: .4; cursor: wait; }
-  .note { max-width: 760px; margin: 8px auto 0; text-align: center; font-size: 12px; color: var(--faint); }
+  .composer input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; padding: 10px 0; }
+  .composer input::placeholder { color: var(--faint); }
+  .send { width: 42px; height: 42px; border: 0; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center;
+          transition: transform .2s var(--ease), opacity .2s; }
+  .send:hover { transform: scale(1.06); }
+  .send:disabled { opacity: .35; cursor: wait; transform: none; }
+  .note { max-width: 800px; margin: 10px auto 0; text-align: center; font-size: 12px; color: var(--faint); }
 
-  @media (max-width: 640px) {
-    .bar { flex-wrap: wrap; row-gap: 2px; }
-    .bar .sub { display: none; }
-    .welcome h2 { font-size: 30px; }
-    .starter span { display: none; }
-    .products { grid-template-columns: 1fr; }
-    .thumb { width: 76px; height: 76px; }
+  @media (max-width: 720px) {
+    .bar { padding: 12px 16px; } .wrap { padding: 4px 16px 190px; }
+    .gallery { grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 32px 0 28px; }
+    .tile .img { height: 120px; } .tile img { max-height: 100px; }
+    .starters { grid-template-columns: 1fr; }
+    .a, .thinking, .error { padding-left: 0; }
+    .a .body p:first-child { font-size: 18px; }
+    .q div { max-width: 88%; }
+    .composer { padding: 22px 12px 12px; }
+    .hero { padding-top: 4vh; }
   }
+  /* Blend white photo backgrounds into the stage colour (light theme only). */
+  .tile img, .card img { mix-blend-mode: multiply; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tile img, :root:not([data-theme="light"]) .card img { mix-blend-mode: normal; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<header>
+<header id="hdr">
   <div class="bar">
+    <div class="mark">R</div>
     <h1 class="serif">Robot Advisor</h1>
-    <span class="sub">for USTARX AI · unofficial demo by Sai Vinil</span>
     <nav>
       <a href="https://github.com/Vinil30/ustarx-robot-advisor" target="_blank" rel="noopener">Code</a>
       <button id="reset">New chat</button>
@@ -138,14 +185,31 @@
 </header>
 
 <main class="wrap" id="log">
-  <section class="welcome fade" id="welcome">
-    <h2 class="serif">Find the right robot<br>for your business.</h2>
-    <p>Describe what you need. I'll recommend a robot from the USTARX catalog, compare buying and leasing, and arrange a demo. Every product and price is checked against the catalog before you see it.</p>
-    <div class="starters">
-      <button class="starter" data-q="I run a 40-table restaurant and need 2 robots to deliver food">I run a 40-table restaurant and need 2 delivery robots <span>Restaurants</span></button>
-      <button class="starter" data-q="Our university wants a robot for a ROS2 course, budget $12,000">Our university wants a robot for a ROS2 course, budget $12,000 <span>Education</span></button>
-      <button class="starter" data-q="Something to greet visitors in our hospital lobby">Something to greet visitors in our hospital lobby <span>Healthcare</span></button>
-      <button class="starter" data-q="We need a robot to clean a large supermarket floor">We need a robot to clean a large supermarket floor <span>Retail</span></button>
+  <section id="welcome">
+    <div class="hero reveal">
+      <div class="eyebrow">For USTARX AI · Unofficial demo by Sai Vinil</div>
+      <h2 class="serif">Find the right robot<br><em>for your business.</em></h2>
+      <p>Describe what you need. I'll recommend from the USTARX catalog, compare buying and leasing, and set up a demo. Every product and price is checked before you see it.</p>
+    </div>
+
+    <div class="gallery reveal" style="animation-delay:.12s">
+      {% for r in featured %}
+      <button class="tile" data-q="Tell me about the {{ r.name }}">
+        <div class="img"><img src="{{ r.image }}" alt="{{ r.name }}" loading="lazy"></div>
+        <div class="t">{{ r.name }}</div>
+        <div class="p">From ${{ "{:,}".format(r.buy_usd) }}</div>
+      </button>
+      {% endfor %}
+    </div>
+
+    <div class="reveal" style="animation-delay:.22s">
+      <div class="divider eyebrow">Or start with a question</div>
+      <div class="starters">
+        <button class="starter" data-q="I run a 40-table restaurant and need 2 robots to deliver food"><span><span class="k">Restaurant</span><span class="v">40 tables, need 2 delivery robots</span></span><span class="arrow">→</span></button>
+        <button class="starter" data-q="Our university wants a robot for a ROS2 course, budget $12,000"><span><span class="k">Education</span><span class="v">A robot for our ROS2 course, $12k budget</span></span><span class="arrow">→</span></button>
+        <button class="starter" data-q="Something to greet visitors in our hospital lobby"><span><span class="k">Healthcare</span><span class="v">Greet visitors in our hospital lobby</span></span><span class="arrow">→</span></button>
+        <button class="starter" data-q="Do you sell chatbots for customer support?"><span><span class="k">AI agents</span><span class="v">A chatbot for our customer support</span></span><span class="arrow">→</span></button>
+      </div>
     </div>
   </section>
 </main>
@@ -153,9 +217,11 @@
 <div class="composer">
   <form id="form">
     <input id="input" autocomplete="off" placeholder="Describe your business and what you need…" aria-label="Message">
-    <button id="send">Send</button>
+    <button class="send" id="send" aria-label="Send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
   </form>
-  <div class="note">Data from public ustarx.ai product pages. Prices may change; confirm with USTARX.</div>
+  <div class="note">Product data from public ustarx.ai pages. Prices may change; confirm with USTARX.</div>
 </div>
 
 <script>
@@ -166,7 +232,9 @@ try { sid = localStorage.getItem("advisor_sid"); } catch (e) {}
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const money = n => "$" + Number(n).toLocaleString("en-US");
 
-// Small, safe markdown: **bold**, "- " bullets, paragraphs. The last line ending in "?" is styled as the question.
+window.addEventListener("scroll", () => $("#hdr").classList.toggle("scrolled", scrollY > 8), { passive: true });
+
+// Small, safe markdown: **bold**, bullets, paragraphs; the closing question gets its own style.
 function md(text) {
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
@@ -176,87 +244,91 @@ function md(text) {
     const m = line.match(/^(?:[-•*]|\d+[.)])\s+(.*)/);
     if (m) { list.push(m[1]); return; }
     flush();
-    const isAsk = i === lines.length - 1 && line.endsWith("?");
-    out.push(`<p${isAsk ? ' class="ask"' : ""}>${inline(line)}</p>`);
+    const ask = i === lines.length - 1 && line.endsWith("?") && lines.length > 1;
+    out.push(`<p${ask ? ' class="ask"' : ""}>${inline(line)}</p>`);
   });
   flush();
   return out.join("");
 }
 
-function product(c) {
+function card(c) {
   const price = c.buy_usd == null
     ? `<div class="quote">Price on request</div>`
-    : `<div class="price">${money(c.buy_usd)} <small>or ${money(c.lease_usd_month)}/mo lease</small></div>`;
-  const img = c.image ? `<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.remove()">` : "";
-  return `<a class="product" href="${esc(c.url)}" target="_blank" rel="noopener">
-            <div class="thumb">${img}</div>
-            <div class="info"><div class="cat">${esc(c.category)}</div><div class="name">${esc(c.name)}</div>${price}
-            <div class="view">View on ustarx.ai →</div></div></a>`;
+    : `<div class="price"><b>${money(c.buy_usd)}</b><span>or ${money(c.lease_usd_month)}/mo</span></div>`;
+  const img = c.image ? `<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" onload="this.classList.add('in')" onerror="this.remove()">` : "";
+  return `<a class="card" href="${esc(c.url)}" target="_blank" rel="noopener">
+            <div class="img">${img}</div>
+            <div class="body2"><span class="eyebrow">${esc(c.category)}</span><span class="name">${esc(c.name)}</span>
+              ${price}<span class="more"><span>View on ustarx.ai</span><span>↗</span></span></div></a>`;
 }
 
 const LABELS = { industry: "industry", use_case: "use case", budget_usd: "budget", quantity: "quantity", prefers: "prefers",
                  wants_demo_or_quote: "wants demo", name: "name", email: "email", company: "company" };
 
 function trace(steps) {
-  const items = steps.map(s => {
+  const li = (cls, html) => `<li class="${cls}">${html}</li>`;
+  return steps.map(s => {
     if (s.step === "understand") {
       const kv = Object.entries(s.needs).filter(([k, v]) => LABELS[k] && v !== null && v !== false && v !== "" && v !== "unknown")
         .map(([k, v]) => `${LABELS[k]}: ${esc(k === "budget_usd" ? money(v) : v === true ? "yes" : v)}`).join(" · ");
-      return `<li><b>Understood the request</b> (LLM). ${kv || "No details yet."}</li>`;
+      return li("", `<b>Understood the request</b><span class="tag">LLM</span><br>${kv || "No specific needs yet."}`);
     }
-    if (s.step === "retrieve") return `<li><b>Searched the catalog</b> (BM25) for <code>${esc(s.query)}</code> and found: ${esc(s.results.join(", ") || "nothing")}.</li>`;
-    if (s.step === "draft") return `<li><b>Wrote draft ${s.attempt}</b> (LLM) using only those products.</li>`;
+    if (s.step === "retrieve") return li("", `<b>Searched the catalog</b><span class="tag">BM25</span><br><code>${esc(s.query)}</code> → ${esc(s.results.join(", ") || "nothing")}`);
+    if (s.step === "draft") return li("", `<b>Wrote draft ${s.attempt}</b><span class="tag">LLM</span><br>Using only the products found above.`);
     if (s.step === "verify") return s.ok
-      ? `<li><b>Fact-checked</b> (code): every product and number matches the catalog.</li>`
-      : `<li><b>Fact-check rejected the draft</b> (code): <span class="bad">${esc(s.problems.join("; "))}</span></li>`;
-    if (s.step === "safe_fallback") return `<li><b>Used a safe answer</b> built only from catalog text.</li>`;
-    if (s.step === "qualify_lead") return `<li><b>Lead score ${s.score}/100</b> (${s.tier})${s.saved ? ", saved for follow-up" : ""}.</li>`;
-    if (s.step === "off_topic") return `<li><b>Off topic</b>, redirected back to robots.</li>`;
+      ? li("ok", `<b>Fact-checked</b><span class="tag">code</span><br>Every product and number matches the catalog.`)
+      : li("bad", `<b>Draft rejected</b><span class="tag">code</span><br><span class="err">${esc(s.problems.join("; "))}</span>`);
+    if (s.step === "safe_fallback") return li("bad", `<b>Safe answer</b><span class="tag">code</span><br>Built only from catalog text.`);
+    if (s.step === "qualify_lead") return li("", `<b>Lead score ${s.score}/100</b><span class="tag">code</span><br>${s.tier}${s.saved ? ", saved for follow-up" : ""}`);
+    if (s.step === "off_topic") return li("", `<b>Off topic</b><br>Redirected back to robots.`);
     return "";
   }).join("");
-  return `<details><summary>How was this answered?</summary><div class="trace"><ol>${items}</ol></div></details>`;
 }
 
-const STATUS = {
-  grounded: '<span class="ok">✓ Checked against the USTARX catalog</span>',
-  fallback: '<span class="warn">Showing catalog facts only</span>',
-  off_topic: "",
-};
-
-function addTurn(html) {
+function addTurn(html, cls = "") {
   $("#welcome")?.remove();
   const d = document.createElement("div");
-  d.className = "turn fade"; d.innerHTML = html;
+  d.className = "turn reveal " + cls; d.innerHTML = html;
   $("#log").appendChild(d);
-  d.scrollIntoView({ behavior: "smooth", block: "end" });
+  requestAnimationFrame(() => d.scrollIntoView({ behavior: "smooth", block: "end" }));
   return d;
 }
+
+const WHO = '<div class="who"><div class="mark serif">R</div><span>Advisor</span></div>';
 
 async function send(text) {
   text = text.trim();
   if (!text) return;
   addTurn(`<div class="q"><div>${esc(text)}</div></div>`);
   $("#input").value = ""; $("#send").disabled = true;
-  const wait = addTurn('<div class="typing"><i></i><i></i><i></i></div>');
+  const wait = addTurn(`${WHO}<div class="thinking"><span class="dots"><i></i><i></i><i></i></span>Checking the catalog…</div>`);
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
                                          body: JSON.stringify({ message: text, session_id: sid }) });
     const data = await r.json();
     wait.remove();
-    if (!r.ok) { addTurn(`<p class="error">${esc(data.error || "Something went wrong.")}</p>`); return; }
+    if (!r.ok) { addTurn(`${WHO}<p class="error">${esc(data.error || "Something went wrong.")}</p>`); return; }
     sid = data.session_id; try { localStorage.setItem("advisor_sid", sid); } catch (e) {}
-    let html = `<div class="a">${md(data.reply)}</div>`;
-    if (data.cards.length) html += `<div class="products">${data.cards.map(product).join("")}</div>`;
-    const status = STATUS[data.status] ?? "";
-    html += `<div class="meta">${status}</div>${trace(data.trace)}`;
-    addTurn(html);
+    const status = data.status === "grounded" ? '<span class="verified">Verified against the USTARX catalog</span>'
+                 : data.status === "fallback" ? '<span class="verified warn">Showing catalog facts only</span>' : "";
+    const html = `${WHO}<div class="a"><div class="body">${md(data.reply)}</div>
+      ${data.cards.length ? `<div class="products">${data.cards.map(card).join("")}</div>` : ""}
+      <div class="meta">${status}<button class="how">How was this answered?</button></div>
+      <div class="trace"><div><ol>${trace(data.trace)}</ol></div></div></div>`;
+    const t = addTurn(html);
+    const ask = t.querySelector(".body p.ask"), prods = t.querySelector(".products");
+    if (ask && prods) prods.after(ask);   // products first, then the follow-up question
+    t.querySelector(".how").addEventListener("click", e => {
+      const tr = t.querySelector(".trace"); tr.classList.toggle("open");
+      e.target.textContent = tr.classList.contains("open") ? "Hide details" : "How was this answered?";
+    });
   } catch (e) {
-    wait.remove(); addTurn('<p class="error">Network error. The demo server may be waking up; please try again in a moment.</p>');
+    wait.remove(); addTurn(`${WHO}<p class="error">Network error. The demo server may be waking up; please try again in a moment.</p>`);
   } finally { $("#send").disabled = false; $("#input").focus(); }
 }
 
 $("#form").addEventListener("submit", e => { e.preventDefault(); send($("#input").value); });
-document.querySelectorAll(".starter").forEach(b => b.addEventListener("click", () => send(b.dataset.q)));
+document.querySelectorAll("[data-q]").forEach(b => b.addEventListener("click", () => send(b.dataset.q)));
 $("#reset").addEventListener("click", async () => {
   try { await fetch("/api/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sid }) }); } catch (e) {}
   sid = null; try { localStorage.removeItem("advisor_sid"); } catch (e) {}
