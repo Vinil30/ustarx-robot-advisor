@@ -1,11 +1,20 @@
-"""Robot Advisor agent as a LangGraph state machine.
+"""Robot Advisor agent as a LangGraph state machine with adaptive (agentic) retrieval.
 
-understand -> retrieve -> draft -> verify --ok--> qualify_lead -> END
-                            ^         |
-                            +-- retry-+  (max 2 retries with the verifier's feedback)
-                                      |
-                                      +-- still failing --> safe_fallback -> qualify_lead
-understand --off topic--> off_topic -> END
+                      ┌─ off_topic ──────────────────────────────────────────► END
+                      ├─ smalltalk ──► chat (no retrieval) ──────────────────► END
+understand ─(intent)──┤
+                      └─ everything else ─► retrieve ─► select ─► draft ─► verify ──ok──► qualify_lead ─► END
+                                                                    ▲        │
+                                                                    └─retry──┤ (max 2, with checker feedback)
+                                                                             └─still failing─► safe_fallback
+
+retrieve decides HOW to look things up:
+  * products the customer named          -> direct lookup (no search)
+  * follow-up about earlier products     -> reuse products from previous turns (memory)
+  * a need ("deliver food", "cook food") -> BM25 candidates
+select: an LLM picks the best 1-3 products from the whole catalog (with BM25 candidates as hints), and says
+whether they are an exact match or only the closest alternatives. This is what lets the agent suggest
+alternatives when keyword search finds nothing.
 """
 import json
 import time
@@ -22,6 +31,9 @@ from .verify import check_reply
 MAX_RETRIES = 2
 LEADS_PATH = Path(__file__).resolve().parent.parent / "data" / "leads.jsonl"
 
+Intent = Literal["smalltalk", "recommend", "product_info", "compare", "browse",
+                 "general_question", "follow_up", "contact_details", "off_topic"]
+
 
 # ---------- LLM interface (Groq in the app, a fake in tests) ----------
 
@@ -31,17 +43,24 @@ class LLM(Protocol):
 
 
 class Needs(BaseModel):
-    """What the customer is looking for, extracted from the conversation so far."""
-    off_topic: bool = Field(description="True only if the message has nothing to do with robots, automation or USTARX")
+    """What the customer wants, extracted from the conversation so far."""
+    intent: Intent = Field(description=(
+        "smalltalk: greeting/thanks/ok with no request. "
+        "recommend: describes a need or task and wants a suggestion. "
+        "product_info: asks about a specific product (price, specs, what it does). "
+        "compare: compares specific products. "
+        "browse: asks what is sold, cheapest, most capable, overview. "
+        "general_question: robotics/AI knowledge question (e.g. what is SLAM). "
+        "follow_up: continues about products already discussed (e.g. 'what about leasing it?'). "
+        "contact_details: mainly giving name/email or asking for a demo/quote. "
+        "off_topic: unrelated to robots, AI agents, automation or USTARX."))
     industry: Optional[str] = Field(None, description="e.g. restaurant, hospital, school, factory")
     use_case: Optional[str] = Field(None, description="What the robot should do, in a few words")
-    search_query: str = Field(description="Keywords to search the robot catalog, e.g. 'restaurant food delivery'")
+    search_query: str = Field("", description="Keywords to search the catalog, e.g. 'restaurant food delivery'")
     budget_usd: Optional[int] = Field(None, description="Total budget in USD if stated")
     quantity: Optional[int] = Field(None, description="Number of robots if stated")
     prefers: Literal["buy", "lease", "unknown"] = "unknown"
     wants_virtual_agents: bool = Field(False, description="Asks about chatbots, AI agents, CRM, software automation")
-    browsing_catalog: bool = Field(False, description="Asks what products exist, the cheapest/most expensive, "
-                                   "a general comparison, or has not described a specific need yet")
     wants_demo_or_quote: bool = Field(False, description="True only if the customer explicitly asks to book a demo, "
                                       "receive a formal quote, or be contacted. A price question alone is NOT this.")
     name: Optional[str] = None
@@ -49,48 +68,75 @@ class Needs(BaseModel):
     company: Optional[str] = None
 
 
+class Selection(BaseModel):
+    product_ids: list[str] = Field(description="1-3 catalog ids, best first. Empty only if truly nothing is relevant.")
+    exact_match: bool = Field(description="True if these products directly do what the customer asked. "
+                                          "False if they are only the closest alternatives.")
+    reason: str = Field(description="One short sentence on why these were chosen")
+
+
 # ---------- State ----------
 
 class State(TypedDict, total=False):
     user_msg: str
     history: list[dict]          # [{"role": "user"|"assistant", "text": ...}]
-    lead: dict                   # merged across turns
+    lead: dict                   # merged across turns; lead["last_products"] = products discussed last turn
     needs: dict
-    retrieved_ids: list[str]
+    candidates: list[str]
+    selected: list[str]
+    exact_match: bool
+    retrieved_ids: list[str]     # products the reply is allowed to mention
     facts: str
     reply: str
     recommended_ids: list[str]
     problems: list[str]
     attempts: int
-    status: str                  # grounded | fallback | off_topic
+    status: str                  # grounded | fallback | conversational | off_topic
     trace: list[dict]
 
 
-UNDERSTAND_SYSTEM = """You extract a customer's needs for USTARX AI, a company that sells and leases
-service robots (delivery, reception humanoids, quadrupeds for inspection/security, cleaning,
-education/ROS kits, dexterous hands) and virtual AI agents. Read the whole conversation and fill
-the schema using only what the customer actually said. Leave unknown fields empty."""
+UNDERSTAND_SYSTEM = """You read a conversation on the USTARX AI website. USTARX sells and leases service robots
+(food delivery, reception and performance humanoids, quadrupeds for inspection/security/education, a cleaning
+robot, a wheeled dual-arm factory robot, dexterous robot hands) and virtual AI agents (customer service, sales,
+operations, industry assistants). Classify the latest message's intent and fill the schema using only what the
+customer actually said. Leave unknown fields empty."""
 
-DRAFT_SYSTEM = """You are the USTARX AI Robot Advisor on the company website.
-Rules (strict):
-- Recommend ONLY products listed in FACTS. Use their exact names.
-- Describe what a product is for ONLY using its "About" and "Good for" lines. Never assign it a use it doesn't list
-  (e.g. don't call an entertainment robot a receptionist).
-- Every price, number or spec you write must appear in FACTS. Never estimate or round.
-- If a product's price is not published, say so and offer a quote. Do not guess a price.
-- If nothing in FACTS fits, say so honestly and offer to connect them with a specialist.
-- If the customer only greets you or hasn't said what they need, greet them in one line and ask what
-  they'd like a robot to do. Don't recommend anything yet.
-- For broad questions (what do you sell, cheapest, most capable), answer from the FULL CATALOG OVERVIEW.
-- If budget is given, say clearly which options fit it. If none fit, still show the closest 1-2 options
-  and their lease prices from FACTS as an alternative, instead of only declining.
-- At most 2 recommendations, plain language, under 130 words.
-Format (markdown):
-1. One short opening sentence that reflects their need.
-2. One bullet per product: "- **Exact Product Name**: why it fits, in one line. Price."
-3. If useful, one short line on buy vs lease using the given numbers.
-4. End with ONE helpful question on its own line (e.g. venue size, buy vs lease, or a demo).
-No headings, no tables, no emojis. Reply with the message text only."""
+SELECT_SYSTEM = """You pick products from the USTARX catalog for a customer. Choose the 1-3 products that best
+serve their need, best first. If nothing does exactly what they ask, choose the closest alternatives that could
+still help (for example, for 'a robot that cooks', a robot that delivers food or handles items) and set
+exact_match to false. Only use ids that appear in the catalog. Prefer the hinted candidates when they fit."""
+
+DRAFT_SYSTEM = """You are the USTARX AI Robot Advisor: a knowledgeable, warm sales engineer on the company website.
+
+Grounding rules (strict, a fact checker verifies them):
+- Mention ONLY products listed in FACTS, with their exact names.
+- Every price, number or spec you write must appear in FACTS or in the customer's message. Never estimate,
+  round, or do your own arithmetic; use the cost lines given.
+- Describe a product's purpose only from its "About" and "Good for" lines. Write it in your own words;
+  never paste the "Good for" list verbatim.
+- Never say something is included (deployment, mapping, training, support, service, upgrades, warranty)
+  unless FACTS states it for that specific product. Don't attribute one product's specs to another.
+- If a price is not published, say so and offer a quote.
+
+How to answer:
+- Be genuinely helpful and descriptive (about 150-250 words), in plain language.
+- If MATCH is "closest alternatives": first say honestly in one sentence that USTARX doesn't offer exactly that,
+  then present the alternatives and explain concretely how each could still help with their goal.
+- For each product: a bullet starting with "**Exact Name**", then 2-3 sentences: what it is, why it fits
+  THEIR situation, and 2-3 relevant specs from FACTS. Then its price (buy and lease).
+- Then a short paragraph with practical advice: buy vs lease using the given cost lines, and what to check
+  before choosing (only mention inclusions FACTS states).
+- For general knowledge questions: answer the question clearly and accurately first (3-5 sentences, no
+  numbers), then briefly mention relevant products from FACTS if there are any; if FACTS has no products,
+  don't name any.
+- For comparisons: compare on the dimensions that matter for their use, then give a clear recommendation.
+- End with ONE specific follow-up question on its own line.
+Format: markdown with short paragraphs and "- " bullets. No headings, no tables, no emojis.
+Reply with the message text only."""
+
+CHAT_SYSTEM = """You are the USTARX AI Robot Advisor. The customer sent a greeting or short social message.
+Reply warmly in 1-2 sentences and ask what they'd like a robot or AI agent to help with (for example in a
+restaurant, hospital, school, factory or office). Do not name any products and do not use numbers."""
 
 
 def _history_text(history: list[dict], limit: int = 6) -> str:
@@ -104,59 +150,117 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
         try:
             needs = llm.structured(Needs, UNDERSTAND_SYSTEM, convo).model_dump()
         except Exception:
-            # Extraction failed: carry on with the raw message as the search query instead of erroring out.
-            needs = Needs(off_topic=False, search_query=state["user_msg"]).model_dump()
+            # Extraction failed: carry on as a recommendation request using the raw message.
+            needs = Needs(intent="recommend", search_query=state["user_msg"]).model_dump()
         lead = dict(state.get("lead") or {})
         for k, v in needs.items():
+            if k == "intent":
+                continue
             if v not in (None, "", "unknown", False) or k not in lead:
                 lead[k] = v
-        return {"needs": needs, "lead": lead, "attempts": 0,
-                "trace": [{"step": "understand", "needs": needs}]}
+        return {"needs": needs, "lead": lead, "attempts": 0, "problems": [],
+                "trace": [{"step": "understand", "intent": needs["intent"], "needs": needs}]}
 
-    def route_topic(state: State) -> str:
-        return "off_topic" if state["needs"]["off_topic"] else "retrieve"
+    def route_intent(state: State) -> str:
+        intent = state["needs"]["intent"]
+        return intent if intent in ("off_topic", "smalltalk") else "retrieve"
 
     def off_topic(state: State) -> State:
         return {"status": "off_topic", "recommended_ids": [],
-                "reply": "I'm the USTARX Robot Advisor, so I can help you pick a robot or AI agent for your "
-                         "business, compare buying vs leasing, or book a demo. What would you like a robot to do for you?",
-                "trace": state["trace"] + [{"step": "off_topic"}]}
+                "reply": "I'm the USTARX Robot Advisor, so I can help you choose a robot or AI agent for your "
+                         "business, compare buying and leasing, or arrange a demo.\n\n"
+                         "What would you like a robot to help you with?",
+                "trace": state["trace"] + [{"step": "route", "decision": "off topic: no lookup"}]}
+
+    def chat(state: State) -> State:
+        try:
+            reply = llm.text(CHAT_SYSTEM, f"Customer: {state['user_msg']}").strip()
+        except Exception:
+            reply = ""
+        # Small talk must not make product or price claims; if it does, use a safe greeting instead.
+        if not reply or catalog.mentions_in_order(reply) or any(ch.isdigit() for ch in reply):
+            reply = ("Hello! I'm the USTARX Robot Advisor. Tell me a little about your business and what you'd "
+                     "like a robot or AI agent to help with, and I'll suggest the right fit.")
+        return {"status": "conversational", "reply": reply, "recommended_ids": [],
+                "trace": state["trace"] + [{"step": "route", "decision": "small talk: no catalog lookup needed"}]}
 
     def retrieve(state: State) -> State:
-        lead = state["lead"]
-        raw = " ".join(filter(None, [state["needs"]["search_query"], lead.get("use_case"), lead.get("industry")]))
-        query = " ".join(dict.fromkeys(raw.lower().split()))   # drop repeated words, keep order
-        robots = catalog.search(query, k=4)
+        needs, lead = state["needs"], state["lead"]
+        intent = needs["intent"]
+        named = [i for i in catalog.mentions_in_order(state["user_msg"])]
+        previous = [i for i in lead.get("last_products", []) if i in catalog.all_by_id]
+        raw = " ".join(filter(None, [needs.get("search_query"), needs.get("use_case") or lead.get("use_case"),
+                                     needs.get("industry") or lead.get("industry")]))
+        query = " ".join(dict.fromkeys(raw.lower().split()))
+        bm25 = [r["id"] for r in catalog.search(query, k=6)] if query else []
+
+        if named:
+            how = "direct lookup of the products you named"
+            candidates = named + [i for i in bm25 if i not in named]
+        elif intent in ("follow_up", "contact_details") and previous:
+            how = "reused products from earlier in the conversation"
+            candidates = previous
+        else:
+            how = f"BM25 keyword search for \"{query}\"" if query else "no keywords; full catalog"
+            candidates = previous + [i for i in bm25 if i not in previous] if intent == "follow_up" else bm25
+        if needs["wants_virtual_agents"]:
+            candidates = list(dict.fromkeys(candidates + list(catalog.agents_by_id)))
+        return {"candidates": candidates,
+                "trace": state["trace"] + [{"step": "retrieve", "how": how,
+                                            "results": [catalog.all_by_id[i]["name"] for i in candidates[:6]]}]}
+
+    def select(state: State) -> State:
+        needs, lead = state["needs"], state["lead"]
+        intent = needs["intent"]
+        cands = state["candidates"]
+        named = catalog.mentions_in_order(state["user_msg"])
+        # Deterministic paths: the customer named products, or is continuing about earlier ones.
+        if named and intent in ("product_info", "compare"):
+            chosen, exact, reason = named[:3], True, "products named by the customer"
+        elif intent in ("follow_up", "contact_details") and lead.get("last_products") and not named:
+            chosen, exact, reason = cands[:3], True, "continuing with the products already discussed"
+        else:
+            hint = ", ".join(cands[:6]) or "(none)"
+            ask = (f"Customer message: {state['user_msg']}\n"
+                   f"Known needs: {json.dumps({k: v for k, v in lead.items() if v not in (None, '', False, 'unknown') and k != 'last_products'})}\n"
+                   f"Keyword-search candidates (hints): {hint}\n\n"
+                   f"{catalog.overview(include_agents=needs['wants_virtual_agents'])}")
+            try:
+                sel = llm.structured(Selection, SELECT_SYSTEM, ask)
+                chosen = [i for i in sel.product_ids if i in catalog.all_by_id][:3]
+                exact, reason = sel.exact_match, sel.reason
+            except Exception:
+                chosen, exact, reason = [], bool(cands), "selector unavailable; using search results"
+            if not chosen:
+                chosen, exact = cands[:3], bool(cands) and exact
+            if intent == "browse":
+                exact = True
+
         blocks = []
-        for r in robots:
-            block = fact_sheet(r)
-            c = cost_facts(r, lead.get("quantity"))
+        for pid in chosen:
+            item = catalog.all_by_id[pid]
+            block = fact_sheet(item)
+            c = cost_facts(item, lead.get("quantity")) if pid in catalog.by_id else None
             if c:
                 block += "\n" + cost_text(c)
                 if lead.get("budget_usd"):
                     fits = c["buy_total_usd"] <= lead["budget_usd"]
                     block += f"\n  Within stated budget of ${lead['budget_usd']:,} (buying): {'yes' if fits else 'no'}"
             blocks.append(block)
-        ids = [r["id"] for r in robots]
-        wants_agents = state["needs"]["wants_virtual_agents"]
-        if wants_agents:
-            blocks += [f"[{a['id']}] {a['name']} (virtual AI agent): {a['summary']} "
-                       f"Price: not published (custom quote). Page: {a['url']}" for a in catalog.virtual_agents]
-            ids += list(catalog.agents_by_id)
-        # Broad question or no keyword match: give the model the whole catalog in one line per product.
-        if state["needs"]["browsing_catalog"] or not robots:
-            blocks.append(catalog.overview(include_agents=wants_agents))
-            ids = list(dict.fromkeys(ids + list(catalog.by_id)))
-        facts = "\n\n".join(blocks)
-        names = [r["name"] for r in robots] + (["AI agents"] if wants_agents else [])
-        if state["needs"]["browsing_catalog"] or not robots:
-            names.append("full catalog overview")
-        return {"retrieved_ids": ids, "facts": facts,
-                "trace": state["trace"] + [{"step": "retrieve", "query": query, "results": names}]}
+        allowed = list(chosen)
+        if intent == "browse" or (not chosen and intent != "general_question"):
+            blocks.append(catalog.overview(include_agents=needs["wants_virtual_agents"]))
+            allowed = list(dict.fromkeys(allowed + list(catalog.all_by_id)))
+        facts = "\n\n".join(blocks) if blocks else "(no products)"
+        return {"selected": chosen, "exact_match": exact, "retrieved_ids": allowed, "facts": facts,
+                "trace": state["trace"] + [{"step": "select", "chosen": [catalog.all_by_id[i]["name"] for i in chosen],
+                                            "exact": exact, "reason": reason}]}
 
     def draft(state: State) -> State:
-        lead = {k: v for k, v in state["lead"].items() if v not in (None, "", False, "unknown")}
-        prompt = (f"CUSTOMER NEEDS SO FAR: {json.dumps(lead)}\n\n"
+        lead = {k: v for k, v in state["lead"].items() if v not in (None, "", False, "unknown") and k != "last_products"}
+        match = "exact" if state.get("exact_match", True) else "closest alternatives"
+        prompt = (f"INTENT: {state['needs']['intent']}\nMATCH: {match}\n"
+                  f"CUSTOMER NEEDS SO FAR: {json.dumps(lead)}\n\n"
                   f"CONVERSATION:\n{_history_text(state.get('history', []))}\nuser: {state['user_msg']}\n\n"
                   f"FACTS:\n{state['facts']}")
         if state.get("problems"):
@@ -168,13 +272,11 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
         recommended = catalog.mentions_in_order(reply)[:3]
         return {"reply": reply, "recommended_ids": recommended,
                 "attempts": state.get("attempts", 0) + 1,
-                "trace": state["trace"] + [{"step": "draft", "attempt": state.get("attempts", 0) + 1,
-                                            "reply": reply}]}
+                "trace": state["trace"] + [{"step": "draft", "attempt": state.get("attempts", 0) + 1}]}
 
     def verify(state: State) -> State:
-        allowed = set(state["retrieved_ids"])
         problems = check_reply(state["reply"], state["facts"], state["user_msg"],
-                               state["recommended_ids"], allowed, catalog)
+                               state["recommended_ids"], set(state["retrieved_ids"]), catalog)
         return {"problems": problems,
                 "trace": state["trace"] + [{"step": "verify", "ok": not problems, "problems": problems}]}
 
@@ -188,19 +290,20 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
 
     def safe_fallback(state: State) -> State:
         """Model kept failing the fact check: answer only with catalog text, no generated claims."""
-        robots = [catalog.all_by_id[i] for i in state["retrieved_ids"][:2]]
-        if robots:
-            lines = ["Here is what I can confirm from our catalog:"]
-            lines += [f"- {r['name']}: {price_text(r)}. {r['url']}" for r in robots]
-            lines.append("A USTARX specialist can confirm details for your exact setup. Shall I book a demo?")
+        items = [catalog.all_by_id[i] for i in (state.get("selected") or state["retrieved_ids"])[:2]]
+        if items:
+            lines = ["Here is what I can confirm from the USTARX catalog:"]
+            lines += [f"- **{r['name']}**: {r['summary']} {price_text(r)}." for r in items]
+            lines.append("A USTARX specialist can confirm the details for your exact setup.")
+            lines.append("Would you like me to arrange a demo?")
         else:
-            lines = ["I couldn't find a product that clearly fits that need. A USTARX specialist can help. "
-                     "Could you share your email so we can contact you?"]
-        return {"status": "fallback", "reply": "\n".join(lines), "recommended_ids": [r["id"] for r in robots],
+            lines = ["I couldn't find a product that clearly fits that need, but a USTARX specialist can help.",
+                     "Could you share your email so the team can contact you?"]
+        return {"status": "fallback", "reply": "\n".join(lines), "recommended_ids": [r["id"] for r in items],
                 "trace": state["trace"] + [{"step": "safe_fallback"}]}
 
     def qualify_lead(state: State) -> State:
-        lead = state["lead"]
+        lead = dict(state["lead"])
         score = (25 * bool(lead.get("use_case")) + 20 * bool(lead.get("budget_usd")) +
                  15 * bool(lead.get("quantity")) + 25 * bool(lead.get("wants_demo_or_quote")) +
                  15 * bool(lead.get("email")))
@@ -208,10 +311,12 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
         reply = state["reply"]
         if lead.get("wants_demo_or_quote") and not lead.get("email"):
             reply += "\n\nTo set up the demo or quote, could you share your name and email?"
+        if state.get("recommended_ids"):
+            lead["last_products"] = state["recommended_ids"]       # memory for follow-up questions
         saved = False
         if lead.get("email"):
             record = {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "score": score, "tier": tier,
-                      "recommended": state.get("recommended_ids", []), **lead}
+                      "recommended": lead.get("last_products", []), **{k: v for k, v in lead.items() if k != "last_products"}}
             leads_path.parent.mkdir(parents=True, exist_ok=True)
             with leads_path.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(record) + "\n")
@@ -220,14 +325,18 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
                 "trace": state["trace"] + [{"step": "qualify_lead", "score": score, "tier": tier, "saved": saved}]}
 
     g = StateGraph(State)
-    for name, fn in [("understand", understand), ("off_topic", off_topic), ("retrieve", retrieve),
-                     ("draft", draft), ("verify", verify), ("mark_grounded", mark_grounded),
-                     ("safe_fallback", safe_fallback), ("qualify_lead", qualify_lead)]:
+    for name, fn in [("understand", understand), ("off_topic", off_topic), ("chat", chat),
+                     ("retrieve", retrieve), ("select", select), ("draft", draft), ("verify", verify),
+                     ("mark_grounded", mark_grounded), ("safe_fallback", safe_fallback),
+                     ("qualify_lead", qualify_lead)]:
         g.add_node(name, fn)
     g.add_edge(START, "understand")
-    g.add_conditional_edges("understand", route_topic, {"off_topic": "off_topic", "retrieve": "retrieve"})
+    g.add_conditional_edges("understand", route_intent,
+                            {"off_topic": "off_topic", "smalltalk": "chat", "retrieve": "retrieve"})
     g.add_edge("off_topic", END)
-    g.add_edge("retrieve", "draft")
+    g.add_edge("chat", END)
+    g.add_edge("retrieve", "select")
+    g.add_edge("select", "draft")
     g.add_edge("draft", "verify")
     g.add_conditional_edges("verify", route_verify,
                             {"ok": "mark_grounded", "retry": "draft", "give_up": "safe_fallback"})

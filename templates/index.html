@@ -271,10 +271,12 @@ function trace(steps) {
     if (s.step === "understand") {
       const kv = Object.entries(s.needs).filter(([k, v]) => LABELS[k] && v !== null && v !== false && v !== "" && v !== "unknown")
         .map(([k, v]) => `${LABELS[k]}: ${esc(k === "budget_usd" ? money(v) : v === true ? "yes" : v)}`).join(" · ");
-      return li("", `<b>Understood the request</b><span class="tag">LLM</span><br>${kv || "No specific needs yet."}`);
+      return li("", `<b>Understood the request</b><span class="tag">LLM</span><br>Intent: <code>${esc(s.intent || "")}</code>${kv ? " · " + kv : ""}`);
     }
-    if (s.step === "retrieve") return li("", `<b>Searched the catalog</b><span class="tag">BM25</span><br><code>${esc(s.query)}</code> → ${esc(s.results.join(", ") || "nothing")}`);
-    if (s.step === "draft") return li("", `<b>Wrote draft ${s.attempt}</b><span class="tag">LLM</span><br>Using only the products found above.`);
+    if (s.step === "route") return li("", `<b>Decided no lookup was needed</b><span class="tag">router</span><br>${esc(s.decision)}`);
+    if (s.step === "retrieve") return li("", `<b>Looked up the catalog</b><span class="tag">retrieval</span><br>${esc(s.how)}${s.results.length ? " → " + esc(s.results.join(", ")) : ""}`);
+    if (s.step === "select") return li("", `<b>${s.exact ? "Picked the best match" : "No exact match, picked closest alternatives"}</b><span class="tag">${s.reason && s.reason.startsWith("products named") || s.reason && s.reason.startsWith("continuing") ? "code" : "LLM"}</span><br>${esc(s.chosen.join(", ") || "none")}${s.reason ? " · " + esc(s.reason) : ""}`);
+    if (s.step === "draft") return li("", `<b>Wrote draft ${s.attempt}</b><span class="tag">LLM</span><br>Using only the facts of the chosen products.`);
     if (s.step === "verify") return s.ok
       ? li("ok", `<b>Fact-checked</b><span class="tag">code</span><br>Every product and number matches the catalog.`)
       : li("bad", `<b>Draft rejected</b><span class="tag">code</span><br><span class="err">${esc(s.problems.join("; "))}</span>`);

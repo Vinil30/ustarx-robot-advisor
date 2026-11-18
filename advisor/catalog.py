@@ -72,7 +72,8 @@ class Catalog:
 
     def overview(self, include_agents: bool = False) -> str:
         """One line per product, for broad questions ('what do you sell?', 'cheapest robot?')."""
-        lines = [f"[{r['id']}] {r['name']} ({r['category']}): {price_text(r)}" for r in self.robots]
+        lines = [f"[{r['id']}] {r['name']} ({r['category']}): {price_text(r)}. Good for: {', '.join(r['use_cases'][:7])}"
+                 for r in self.robots]
         if include_agents:
             lines += [f"[{a['id']}] {a['name']} (virtual AI agent): {a['summary']}" for a in self.virtual_agents]
         return "FULL CATALOG OVERVIEW:\n" + "\n".join(lines)
@@ -85,6 +86,9 @@ def price_text(robot: dict) -> str:
 
 
 def fact_sheet(robot: dict) -> str:
+    if "specs" not in robot:   # virtual AI agent
+        return (f"[{robot['id']}] {robot['name']} (Virtual AI agent)\n"
+                f"  Price: not published (custom quote)\n  About: {robot['summary']}\n  Page: {robot['url']}")
     specs = "; ".join(f"{k}: {v}" for k, v in robot["specs"].items())
     return (
         f"[{robot['id']}] {robot['name']} ({robot['category']})\n"
