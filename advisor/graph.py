@@ -112,7 +112,8 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
 
     def retrieve(state: State) -> State:
         lead = state["lead"]
-        query = " ".join(filter(None, [state["needs"]["search_query"], lead.get("use_case"), lead.get("industry")]))
+        raw = " ".join(filter(None, [state["needs"]["search_query"], lead.get("use_case"), lead.get("industry")]))
+        query = " ".join(dict.fromkeys(raw.lower().split()))   # drop repeated words, keep order
         robots = catalog.search(query, k=4)
         blocks = []
         for r in robots:
