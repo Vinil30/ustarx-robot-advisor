@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .disc { fill: #ffffff; stroke: #e6e1d8; }
+    .r { fill: #1d1b18; }
+    @media (prefers-color-scheme: dark) {
+      .disc { fill: #1c1b19; stroke: #3a3632; }
+      .r { fill: #ede9e2; }
+    }
+  </style>
+  <circle class="disc" cx="32" cy="32" r="30" stroke-width="2.5"/>
+  <text class="r" x="32" y="33" text-anchor="middle" dominant-baseline="central"
+        font-family="'Source Serif 4', Georgia, 'Times New Roman', serif" font-size="36" font-weight="600">R</text>
+</svg>

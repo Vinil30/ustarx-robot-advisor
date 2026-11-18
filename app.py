@@ -5,7 +5,7 @@ import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 from advisor.catalog import Catalog, price_text
 from advisor.graph import GroqLLM, build_graph
@@ -49,6 +49,11 @@ FEATURED = ["bellabot-pro", "agibot-x2-ultra", "agibot-d1-edu-pro", "agibot-c5"]
 @app.get("/")
 def index():
     return render_template("index.html", featured=[catalog.by_id[i] for i in FEATURED])
+
+
+@app.get("/favicon.ico")
+def favicon():
+    return send_from_directory(app.static_folder, "favicon.ico", mimetype="image/vnd.microsoft.icon", max_age=86400)
 
 
 @app.post("/api/chat")
