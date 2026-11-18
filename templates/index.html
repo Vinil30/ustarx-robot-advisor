@@ -6,358 +6,257 @@
 <title>Robot Advisor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f5f8; --surface: #ffffff; --surface-2: #f8f9fb; --text: #0f172a; --muted: #64748b; --faint: #94a3b8;
-    --line: #e5e7ee; --accent: #4f46e5; --accent-2: #6366f1; --accent-soft: #eef0ff; --on-accent: #ffffff;
-    --ok: #059669; --ok-soft: #e7f8f1; --warn: #d97706; --warn-soft: #fff6e6; --bad: #e11d48; --bad-soft: #fff0f3;
-    --shadow: 0 1px 2px rgba(15,23,42,.04), 0 4px 16px rgba(15,23,42,.05);
-    --radius: 16px;
+    --bg: #fbfaf8; --surface: #ffffff; --soft: #f3f1ed; --text: #1c1a17; --muted: #6f6a62; --faint: #a39d93;
+    --line: #e7e3dc; --accent: #1c1a17; --link: #3d5a80; --ok: #2f7a55; --warn: #a3620a; --bad: #b4232c;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0b0d12; --surface: #12151c; --surface-2: #171b24; --text: #e8ebf2; --muted: #9aa4b6; --faint: #6b7487;
-      --line: #252a36; --accent: #818cf8; --accent-2: #a5b4fc; --accent-soft: #1d2140; --on-accent: #0b0d12;
-      --ok: #34d399; --ok-soft: #0f2a21; --warn: #fbbf24; --warn-soft: #2b2210; --bad: #fb7185; --bad-soft: #2d1219;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+      --bg: #151413; --surface: #1d1c1a; --soft: #262422; --text: #ece8e1; --muted: #a8a299; --faint: #77726b;
+      --line: #33302c; --accent: #ece8e1; --link: #9db8dc; --ok: #6cc497; --warn: #e2a64b; --bad: #f08a90;
     }
   }
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
+  html { scroll-behavior: smooth; }
   body { margin: 0; background: var(--bg); color: var(--text);
-         font: 15px/1.55 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+         font: 16px/1.65 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--link); }
   button { font: inherit; cursor: pointer; }
-  svg { flex-shrink: 0; }
+  .serif { font-family: "Source Serif 4", Georgia, serif; }
 
-  /* ---------- header ---------- */
-  header { height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 20px;
-           background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
-  .logo { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
-          background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); }
-  .brand h1 { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -.01em; white-space: nowrap; }
-  .brand p { margin: 0; font-size: 12px; color: var(--muted); }
-  .head-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-  .btn-ghost { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 10px;
-               border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 500;
-               text-decoration: none; }
-  .btn-ghost:hover { background: var(--surface-2); }
-  .only-mobile { display: none; }
+  /* header */
+  header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 88%, transparent);
+           backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 760px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: baseline; gap: 12px; }
+  .bar h1 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+  .bar .sub { font-size: 13px; color: var(--muted); }
+  .bar nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
+  .bar nav a, .bar nav button { color: var(--muted); text-decoration: none; background: none; border: 0; padding: 0; }
+  .bar nav a:hover, .bar nav button:hover { color: var(--text); }
 
-  /* ---------- layout ---------- */
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; padding: 20px;
-         max-width: 1320px; margin: 0 auto; height: calc(100vh - 64px); }
-  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-           box-shadow: var(--shadow); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  /* conversation */
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 180px; }
+  .turn { margin-bottom: 30px; }
+  .fade { animation: fade .45s ease both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-  /* ---------- chat ---------- */
-  .msgs { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 18px; scroll-behavior: smooth; }
-  .row { display: flex; gap: 10px; align-items: flex-start; animation: rise .25s ease-out; }
-  .row.user { justify-content: flex-end; }
-  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  .avatar { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
-            background: var(--accent-soft); color: var(--accent); }
-  .bubble { max-width: min(640px, 82%); padding: 12px 16px; border-radius: 14px; }
-  .row.bot .bubble { background: var(--surface-2); border: 1px solid var(--line); border-top-left-radius: 4px; }
-  .row.user .bubble { background: var(--accent); color: var(--on-accent); border-top-right-radius: 4px; }
-  .bubble p { margin: 0 0 8px; } .bubble p:last-child { margin-bottom: 0; }
-  .bubble ul { margin: 4px 0 8px; padding-left: 18px; } .bubble li { margin: 2px 0; }
-  .error { align-self: center; display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-radius: 12px;
-           background: var(--bad-soft); color: var(--bad); font-size: 14px; }
+  .q { display: flex; justify-content: flex-end; }
+  .q div { background: var(--soft); padding: 10px 16px; border-radius: 18px; max-width: 85%; }
 
-  .typing { display: inline-flex; gap: 4px; padding: 4px 0; }
-  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); animation: blink 1.2s infinite; }
-  .typing span:nth-child(2) { animation-delay: .15s; } .typing span:nth-child(3) { animation-delay: .3s; }
-  @keyframes blink { 0%, 80%, 100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+  .a p { margin: 0 0 12px; }
+  .a ul { margin: 0 0 12px; padding-left: 20px; }
+  .a li { margin: 6px 0; padding-left: 2px; }
+  .a li::marker { color: var(--faint); }
+  .a b { font-weight: 600; }
+  .a .ask { font-weight: 500; }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
-          display: flex; flex-direction: column; gap: 6px; transition: border-color .15s, transform .15s; }
-  .card:hover { border-color: var(--accent); transform: translateY(-1px); }
-  .card .cat { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
-  .card .name { font-weight: 650; font-size: 15px; }
-  .price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-  .price .buy { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
-  .price .lease { font-size: 13px; color: var(--muted); }
-  .price .quote { font-size: 13px; color: var(--warn); font-weight: 600; }
-  .card a { margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none;
-            display: inline-flex; align-items: center; gap: 4px; }
-  .card a:hover { text-decoration: underline; }
+  /* product cards */
+  .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin: 16px 0 6px; }
+  .product { display: flex; gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--line);
+             border-radius: 14px; padding: 12px; text-decoration: none; color: inherit;
+             transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+  .product:hover { border-color: var(--faint); box-shadow: 0 6px 20px rgba(0,0,0,.06); transform: translateY(-1px); }
+  .thumb { width: 92px; height: 92px; flex-shrink: 0; border-radius: 10px; background: #fff; border: 1px solid var(--line);
+           display: grid; place-items: center; overflow: hidden; }
+  .thumb img { width: 100%; height: 100%; object-fit: contain; padding: 6px; opacity: 0; transition: opacity .4s ease; }
+  .thumb img.loaded { opacity: 1; }
+  .info { min-width: 0; }
+  .info .cat { font-size: 12px; color: var(--muted); }
+  .info .name { font-weight: 600; font-size: 16px; line-height: 1.3; margin: 1px 0 4px; }
+  .info .price { font-size: 15px; }
+  .info .price small { color: var(--muted); font-size: 13px; }
+  .info .quote { font-size: 14px; color: var(--warn); }
+  .info .view { font-size: 13px; color: var(--link); }
 
-  .badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 12px; font-weight: 600;
-           padding: 4px 10px; border-radius: 99px; }
-  .badge.grounded { background: var(--ok-soft); color: var(--ok); }
-  .badge.fallback { background: var(--warn-soft); color: var(--warn); }
-  .badge.off_topic { background: var(--accent-soft); color: var(--accent); }
+  /* check line + trace */
+  .meta { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .meta .ok { color: var(--ok); } .meta .warn { color: var(--warn); }
+  details { margin-top: 6px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; display: inline-flex; gap: 6px; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "›"; display: inline-block; transition: transform .2s ease; }
+  details[open] summary::before { transform: rotate(90deg); }
+  .trace { margin: 10px 0 0; padding: 12px 16px; border-left: 2px solid var(--line); font-size: 13.5px; color: var(--muted);
+           animation: fade .3s ease both; }
+  .trace ol { margin: 0; padding-left: 18px; }
+  .trace li { margin: 6px 0; }
+  .trace li b { color: var(--text); font-weight: 600; }
+  .trace .bad { color: var(--bad); }
+  .trace code { font-size: 12.5px; background: var(--soft); padding: 1px 6px; border-radius: 5px; }
+
+  .typing { display: inline-flex; gap: 5px; padding: 8px 0; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); animation: pulse 1.2s infinite ease-in-out; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes pulse { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+  .error { color: var(--bad); font-size: 14px; }
 
   /* welcome */
-  .welcome { margin: auto; text-align: center; max-width: 620px; padding: 12px 0; }
-  .welcome .big { width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 14px; display: grid; place-items: center;
-                  background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent);
-                  box-shadow: 0 8px 24px rgba(79,70,229,.25); }
-  .welcome h2 { font-size: 24px; letter-spacing: -.02em; margin: 0 0 6px; }
-  .welcome > p { color: var(--muted); margin: 0 0 22px; }
-  .suggest { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
-  .sug { display: flex; gap: 12px; align-items: flex-start; padding: 14px; text-align: left; border-radius: 12px; border: 1px solid var(--line);
-         background: var(--surface); color: var(--text); transition: border-color .15s, background .15s; }
-  .sug:hover { border-color: var(--accent); background: var(--accent-soft); }
-  .sug .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
-  .sug b { display: block; font-size: 14px; font-weight: 600; }
-  .sug span { font-size: 13px; color: var(--muted); }
+  .welcome { padding: 6vh 0 10px; }
+  .welcome h2 { font-size: 38px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; margin: 0 0 12px; }
+  .welcome p { color: var(--muted); margin: 0 0 28px; max-width: 540px; }
+  .starters { display: grid; gap: 0; border-top: 1px solid var(--line); }
+  .starter { text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); color: var(--text);
+             padding: 14px 4px; display: flex; justify-content: space-between; gap: 16px; transition: padding .2s ease, color .2s ease; }
+  .starter span { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .starter:hover { padding-left: 10px; }
 
   /* composer */
-  .composer { padding: 14px 16px 12px; border-top: 1px solid var(--line); background: var(--surface); }
-  .field { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border: 1px solid var(--line);
-           border-radius: 14px; background: var(--surface-2); transition: border-color .15s, box-shadow .15s; }
-  .field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-  .field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; padding: 8px 0; }
-  .send { width: 40px; height: 40px; border: 0; border-radius: 10px; background: var(--accent); color: var(--on-accent);
-          display: grid; place-items: center; transition: opacity .15s; }
-  .send:disabled { opacity: .45; cursor: wait; }
-  .hint { display: flex; align-items: center; gap: 6px; justify-content: center; margin-top: 8px; font-size: 12px; color: var(--faint); }
+  .composer { position: fixed; left: 0; right: 0; bottom: 0; padding: 16px 20px 18px;
+              background: linear-gradient(to top, var(--bg) 70%, transparent); }
+  .composer form { max-width: 760px; margin: 0 auto; display: flex; gap: 8px; align-items: center; background: var(--surface);
+                   border: 1px solid var(--line); border-radius: 16px; padding: 6px 6px 6px 18px;
+                   box-shadow: 0 4px 24px rgba(0,0,0,.06); transition: border-color .2s ease; }
+  .composer form:focus-within { border-color: var(--faint); }
+  .composer input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; padding: 9px 0; }
+  .composer button { height: 40px; padding: 0 18px; border: 0; border-radius: 11px; background: var(--accent); color: var(--bg);
+                     font-weight: 500; transition: opacity .2s ease; }
+  .composer button:disabled { opacity: .4; cursor: wait; }
+  .note { max-width: 760px; margin: 8px auto 0; text-align: center; font-size: 12px; color: var(--faint); }
 
-  /* ---------- trace ---------- */
-  .trace-head { padding: 16px 18px; border-bottom: 1px solid var(--line); }
-  .trace-head h3 { margin: 0; font-size: 14px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
-  .trace-head p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
-  .steps { overflow-y: auto; padding: 16px 18px; }
-  .placeholder { color: var(--muted); font-size: 13px; }
-  .pipeline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .pipeline span { font-size: 12px; padding: 3px 9px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); }
-  .tl { position: relative; padding-left: 26px; padding-bottom: 16px; }
-  .tl::before { content: ""; position: absolute; left: 8px; top: 20px; bottom: 0; width: 2px; background: var(--line); }
-  .tl:last-child::before { display: none; }
-  .dot { position: absolute; left: 0; top: 2px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
-         background: var(--accent-soft); color: var(--accent); font-size: 10px; font-weight: 700; }
-  .tl.ok .dot { background: var(--ok-soft); color: var(--ok); }
-  .tl.fail .dot { background: var(--bad-soft); color: var(--bad); }
-  .tl.warn .dot { background: var(--warn-soft); color: var(--warn); }
-  .tl-title { font-size: 13px; font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 5px;
-         background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); }
-  .tl-body { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
-  .kv { display: flex; flex-wrap: wrap; gap: 5px; }
-  .kv span { padding: 2px 8px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); font-size: 12px; }
-  .kv span i { font-style: normal; color: var(--muted); }
-  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11.5px; white-space: pre-wrap; word-break: break-word; }
-  .problem { color: var(--bad); }
-  .meter { height: 8px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; margin-top: 6px; }
-  .meter i { display: block; height: 100%; border-radius: 99px; transition: width .5s ease; }
-
-  @media (max-width: 900px) {
-    main { grid-template-columns: 1fr; padding: 12px 16px 16px; height: auto; gap: 12px; }
-    .chat { height: calc(100vh - 64px - 28px); }
-    .trace { display: none; max-height: 70vh; }
-    body.show-trace .trace { display: flex; }
-    .only-mobile { display: inline-flex; }
-    .brand p, .lbl { display: none; }
-    header { padding: 0 16px; gap: 10px; }
-    .btn-ghost { padding: 0 10px; }
-    .suggest { grid-template-columns: 1fr; }
-    .msgs { padding: 16px; }
-    .bubble { max-width: 88%; }
+  @media (max-width: 640px) {
+    .bar { flex-wrap: wrap; row-gap: 2px; }
+    .bar .sub { display: none; }
+    .welcome h2 { font-size: 30px; }
+    .starter span { display: none; }
+    .products { grid-template-columns: 1fr; }
+    .thumb { width: 76px; height: 76px; }
   }
 </style>
 </head>
 <body>
 <header>
-  <div class="logo" aria-hidden="true">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></svg>
-  </div>
-  <div class="brand">
-    <h1>Robot Advisor</h1>
-    <p>Unofficial demo for USTARX AI · built by Sai Vinil · data from ustarx.ai</p>
-  </div>
-  <div class="head-actions">
-    <button class="btn-ghost only-mobile" id="toggleTrace">Trace</button>
-    <a class="btn-ghost" href="https://github.com/Vinil30/ustarx-robot-advisor" target="_blank" rel="noopener" aria-label="Code on GitHub">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
-      <span class="lbl">Code</span>
-    </a>
-    <button class="btn-ghost" id="reset" aria-label="New chat">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      <span class="lbl">New chat</span>
-    </button>
+  <div class="bar">
+    <h1 class="serif">Robot Advisor</h1>
+    <span class="sub">for USTARX AI · unofficial demo by Sai Vinil</span>
+    <nav>
+      <a href="https://github.com/Vinil30/ustarx-robot-advisor" target="_blank" rel="noopener">Code</a>
+      <button id="reset">New chat</button>
+    </nav>
   </div>
 </header>
 
-<main>
-  <section class="panel chat">
-    <div class="msgs" id="msgs">
-      <div class="welcome" id="welcome">
-        <div class="big"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></svg></div>
-        <h2>What should your robot do?</h2>
-        <p>Tell me about your business. I'll recommend a robot, compare buying vs leasing, and set up a demo.</p>
-        <div class="suggest">
-          <button class="sug" data-q="I run a 40-table restaurant and need 2 robots to deliver food">
-            <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 2v20M4 2v6a3 3 0 0 0 6 0V2M17 2c-2 2-3 5-3 8h3v12"/></svg></span>
-            <span><b>Restaurant delivery</b><span>40 tables, need 2 robots</span></span>
-          </button>
-          <button class="sug" data-q="Our university wants a robot for a ROS2 course, budget $12,000">
-            <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></span>
-            <span><b>ROS2 course</b><span>University lab, $12,000 budget</span></span>
-          </button>
-          <button class="sug" data-q="Something to greet visitors in our hospital lobby">
-            <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M12 8v6M9 11h6"/></svg></span>
-            <span><b>Hospital reception</b><span>Greet visitors in the lobby</span></span>
-          </button>
-          <button class="sug" data-q="How much is the AGIBOT A2 Lite?">
-            <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor"/></svg></span>
-            <span><b>Unpublished price</b><span>How much is the A2 Lite?</span></span>
-          </button>
-        </div>
-      </div>
+<main class="wrap" id="log">
+  <section class="welcome fade" id="welcome">
+    <h2 class="serif">Find the right robot<br>for your business.</h2>
+    <p>Describe what you need. I'll recommend a robot from the USTARX catalog, compare buying and leasing, and arrange a demo. Every product and price is checked against the catalog before you see it.</p>
+    <div class="starters">
+      <button class="starter" data-q="I run a 40-table restaurant and need 2 robots to deliver food">I run a 40-table restaurant and need 2 delivery robots <span>Restaurants</span></button>
+      <button class="starter" data-q="Our university wants a robot for a ROS2 course, budget $12,000">Our university wants a robot for a ROS2 course, budget $12,000 <span>Education</span></button>
+      <button class="starter" data-q="Something to greet visitors in our hospital lobby">Something to greet visitors in our hospital lobby <span>Healthcare</span></button>
+      <button class="starter" data-q="We need a robot to clean a large supermarket floor">We need a robot to clean a large supermarket floor <span>Retail</span></button>
     </div>
-    <form class="composer" id="form">
-      <div class="field">
-        <input id="input" autocomplete="off" placeholder="Describe your business and what you need…" aria-label="Message">
-        <button class="send" id="send" aria-label="Send">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
-      </div>
-      <div class="hint">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
-        Every product and price is checked against the USTARX catalog before you see it
-      </div>
-    </form>
   </section>
-
-  <aside class="panel trace">
-    <div class="trace-head">
-      <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Agent trace</h3>
-      <p>What the agent did for the last message</p>
-    </div>
-    <div class="steps" id="steps">
-      <p class="placeholder">Send a message to watch the pipeline run:</p>
-      <div class="pipeline"><span>Understand</span><span>Retrieve</span><span>Draft</span><span>Fact-check</span><span>Lead score</span></div>
-    </div>
-  </aside>
 </main>
+
+<div class="composer">
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="Describe your business and what you need…" aria-label="Message">
+    <button id="send">Send</button>
+  </form>
+  <div class="note">Data from public ustarx.ai product pages. Prices may change; confirm with USTARX.</div>
+</div>
 
 <script>
 const $ = s => document.querySelector(s);
 let sid = null;
 try { sid = localStorage.getItem("advisor_sid"); } catch (e) {}
 
-const ICON_BOT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></svg>';
-const ICON_CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>';
-const ICON_ARROW = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';
-
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const money = n => "$" + Number(n).toLocaleString("en-US");
 
-// Tiny, safe markdown: **bold**, "- " bullets, paragraphs.
+// Small, safe markdown: **bold**, "- " bullets, paragraphs. The last line ending in "?" is styled as the question.
 function md(text) {
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
   const out = []; let list = [];
   const flush = () => { if (list.length) { out.push("<ul>" + list.map(l => `<li>${inline(l)}</li>`).join("") + "</ul>"); list = []; } };
-  for (const line of text.split("\n")) {
-    const m = line.match(/^\s*[-•*]\s+(.*)/);
-    if (m) { list.push(m[1]); continue; }
+  lines.forEach((line, i) => {
+    const m = line.match(/^(?:[-•*]|\d+[.)])\s+(.*)/);
+    if (m) { list.push(m[1]); return; }
     flush();
-    if (line.trim()) out.push(`<p>${inline(line)}</p>`);
-  }
+    const isAsk = i === lines.length - 1 && line.endsWith("?");
+    out.push(`<p${isAsk ? ' class="ask"' : ""}>${inline(line)}</p>`);
+  });
   flush();
   return out.join("");
 }
 
-function row(cls, inner) {
-  $("#welcome")?.remove();
-  const r = document.createElement("div");
-  r.className = "row " + cls;
-  r.innerHTML = (cls === "bot" ? `<div class="avatar">${ICON_BOT}</div>` : "") + `<div class="bubble">${inner}</div>`;
-  $("#msgs").appendChild(r);
-  $("#msgs").scrollTop = $("#msgs").scrollHeight;
-  return r;
-}
-
-function errorRow(msg) {
-  const d = document.createElement("div");
-  d.className = "error"; d.textContent = msg;
-  $("#msgs").appendChild(d); $("#msgs").scrollTop = $("#msgs").scrollHeight;
-}
-
-function card(c) {
+function product(c) {
   const price = c.buy_usd == null
-    ? `<span class="quote">Price on request</span>`
-    : `<span class="buy">${money(c.buy_usd)}</span><span class="lease">or ${money(c.lease_usd_month)}/mo lease</span>`;
-  return `<div class="card"><span class="cat">${esc(c.category)}</span><span class="name">${esc(c.name)}</span>
-          <div class="price">${price}</div>
-          <a href="${esc(c.url)}" target="_blank" rel="noopener">View on ustarx.ai ${ICON_ARROW}</a></div>`;
+    ? `<div class="quote">Price on request</div>`
+    : `<div class="price">${money(c.buy_usd)} <small>or ${money(c.lease_usd_month)}/mo lease</small></div>`;
+  const img = c.image ? `<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" onload="this.classList.add('loaded')" onerror="this.remove()">` : "";
+  return `<a class="product" href="${esc(c.url)}" target="_blank" rel="noopener">
+            <div class="thumb">${img}</div>
+            <div class="info"><div class="cat">${esc(c.category)}</div><div class="name">${esc(c.name)}</div>${price}
+            <div class="view">View on ustarx.ai →</div></div></a>`;
 }
 
-const BADGE = {
-  grounded: `${ICON_CHECK} Fact-checked against catalog`,
-  fallback: "Safe fallback: draft failed fact-check",
-  off_topic: "Off topic",
+const LABELS = { industry: "industry", use_case: "use case", budget_usd: "budget", quantity: "quantity", prefers: "prefers",
+                 wants_demo_or_quote: "wants demo", name: "name", email: "email", company: "company" };
+
+function trace(steps) {
+  const items = steps.map(s => {
+    if (s.step === "understand") {
+      const kv = Object.entries(s.needs).filter(([k, v]) => LABELS[k] && v !== null && v !== false && v !== "" && v !== "unknown")
+        .map(([k, v]) => `${LABELS[k]}: ${esc(k === "budget_usd" ? money(v) : v === true ? "yes" : v)}`).join(" · ");
+      return `<li><b>Understood the request</b> (LLM). ${kv || "No details yet."}</li>`;
+    }
+    if (s.step === "retrieve") return `<li><b>Searched the catalog</b> (BM25) for <code>${esc(s.query)}</code> and found: ${esc(s.results.join(", ") || "nothing")}.</li>`;
+    if (s.step === "draft") return `<li><b>Wrote draft ${s.attempt}</b> (LLM) using only those products.</li>`;
+    if (s.step === "verify") return s.ok
+      ? `<li><b>Fact-checked</b> (code): every product and number matches the catalog.</li>`
+      : `<li><b>Fact-check rejected the draft</b> (code): <span class="bad">${esc(s.problems.join("; "))}</span></li>`;
+    if (s.step === "safe_fallback") return `<li><b>Used a safe answer</b> built only from catalog text.</li>`;
+    if (s.step === "qualify_lead") return `<li><b>Lead score ${s.score}/100</b> (${s.tier})${s.saved ? ", saved for follow-up" : ""}.</li>`;
+    if (s.step === "off_topic") return `<li><b>Off topic</b>, redirected back to robots.</li>`;
+    return "";
+  }).join("");
+  return `<details><summary>How was this answered?</summary><div class="trace"><ol>${items}</ol></div></details>`;
+}
+
+const STATUS = {
+  grounded: '<span class="ok">✓ Checked against the USTARX catalog</span>',
+  fallback: '<span class="warn">Showing catalog facts only</span>',
+  off_topic: "",
 };
 
-const LABELS = { industry: "industry", use_case: "use case", budget_usd: "budget", quantity: "qty", prefers: "prefers",
-                 wants_demo_or_quote: "demo", wants_virtual_agents: "AI agents", name: "name", email: "email", company: "company" };
-
-function renderTrace(trace) {
-  const parts = [];
-  for (const s of trace) {
-    if (s.step === "understand") {
-      const kv = Object.entries(s.needs)
-        .filter(([k, v]) => LABELS[k] && v !== null && v !== false && v !== "" && v !== "unknown")
-        .map(([k, v]) => `<span><i>${LABELS[k]}:</i> ${esc(k === "budget_usd" ? money(v) : v === true ? "yes" : v)}</span>`).join("");
-      parts.push(tl("1", "", "Understand", "LLM", kv ? `<div class="kv">${kv}</div>` : "No details yet"));
-    } else if (s.step === "retrieve") {
-      parts.push(tl("2", "", "Retrieve", "BM25",
-        `<div class="mono">"${esc(s.query)}"</div><div class="kv" style="margin-top:6px">${(s.results.length ? s.results : ["no match"]).map(r => `<span>${esc(r)}</span>`).join("")}</div>`));
-    } else if (s.step === "draft") {
-      parts.push(tl("3", "", `Draft #${s.attempt}`, "LLM", "Reply written from retrieved facts only"));
-    } else if (s.step === "verify") {
-      parts.push(s.ok
-        ? tl("✓", "ok", "Fact-check passed", "code", "Every product and number traced back to the catalog")
-        : tl("✕", "fail", "Fact-check rejected", "code", s.problems.map(p => `<div class="problem">• ${esc(p)}</div>`).join("") + "<div>Sent back to the LLM with this feedback</div>"));
-    } else if (s.step === "safe_fallback") {
-      parts.push(tl("!", "warn", "Safe fallback", "code", "Answered with catalog text only"));
-    } else if (s.step === "qualify_lead") {
-      const color = s.tier === "hot" ? "var(--ok)" : s.tier === "warm" ? "var(--warn)" : "var(--faint)";
-      parts.push(tl("5", "", `Lead score · ${s.score}/100 · ${s.tier}`, "code",
-        `<div class="meter"><i style="width:${s.score}%;background:${color}"></i></div>
-         <div style="margin-top:6px">${s.saved ? "Lead saved for follow-up" : "No email yet, not saved"}</div>`));
-    } else if (s.step === "off_topic") {
-      parts.push(tl("↩", "warn", "Off topic", "code", "Redirected back to robots"));
-    }
-  }
-  $("#steps").innerHTML = parts.join("");
-}
-
-function tl(n, cls, title, tag, body) {
-  return `<div class="tl ${cls}"><span class="dot">${n}</span>
-          <div class="tl-title">${title}<span class="tag">${tag}</span></div>
-          <div class="tl-body">${body}</div></div>`;
+function addTurn(html) {
+  $("#welcome")?.remove();
+  const d = document.createElement("div");
+  d.className = "turn fade"; d.innerHTML = html;
+  $("#log").appendChild(d);
+  d.scrollIntoView({ behavior: "smooth", block: "end" });
+  return d;
 }
 
 async function send(text) {
   text = text.trim();
   if (!text) return;
-  row("user", esc(text));
+  addTurn(`<div class="q"><div>${esc(text)}</div></div>`);
   $("#input").value = ""; $("#send").disabled = true;
-  const wait = row("bot", '<div class="typing"><span></span><span></span><span></span></div>');
+  const wait = addTurn('<div class="typing"><i></i><i></i><i></i></div>');
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" },
                                          body: JSON.stringify({ message: text, session_id: sid }) });
     const data = await r.json();
     wait.remove();
-    if (!r.ok) { errorRow(data.error || "Something went wrong."); return; }
+    if (!r.ok) { addTurn(`<p class="error">${esc(data.error || "Something went wrong.")}</p>`); return; }
     sid = data.session_id; try { localStorage.setItem("advisor_sid", sid); } catch (e) {}
-    let html = md(data.reply);
-    if (data.cards.length) html += `<div class="cards">${data.cards.map(card).join("")}</div>`;
-    html += `<span class="badge ${data.status}">${BADGE[data.status] || esc(data.status)}</span>`;
-    row("bot", html);
-    renderTrace(data.trace);
+    let html = `<div class="a">${md(data.reply)}</div>`;
+    if (data.cards.length) html += `<div class="products">${data.cards.map(product).join("")}</div>`;
+    const status = STATUS[data.status] ?? "";
+    html += `<div class="meta">${status}</div>${trace(data.trace)}`;
+    addTurn(html);
   } catch (e) {
-    wait.remove(); errorRow("Network error. The demo server may be waking up, please try again in a moment.");
+    wait.remove(); addTurn('<p class="error">Network error. The demo server may be waking up; please try again in a moment.</p>');
   } finally { $("#send").disabled = false; $("#input").focus(); }
 }
 
 $("#form").addEventListener("submit", e => { e.preventDefault(); send($("#input").value); });
-document.querySelectorAll(".sug").forEach(b => b.addEventListener("click", () => send(b.dataset.q)));
-$("#toggleTrace").addEventListener("click", () => document.body.classList.toggle("show-trace"));
+document.querySelectorAll(".starter").forEach(b => b.addEventListener("click", () => send(b.dataset.q)));
 $("#reset").addEventListener("click", async () => {
   try { await fetch("/api/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sid }) }); } catch (e) {}
   sid = null; try { localStorage.removeItem("advisor_sid"); } catch (e) {}

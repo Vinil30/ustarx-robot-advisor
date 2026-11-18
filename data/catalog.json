@@ -9,8 +9,28 @@
       "lease_usd_month": 825,
       "url": "https://www.ustarx.ai/products/bellabot-pro",
       "summary": "Full-stack food delivery robot for North American restaurants. Multi-tray serving, customer-facing touch display for order updates. Local deployment with on-site SLAM mapping, commissioning, staff training and after-sales support included.",
-      "use_cases": ["food delivery", "restaurant", "hotel", "cafe", "bar", "cafeteria", "food court", "table service", "dish return"],
-      "specs": {"Payload": "40 kg (10 kg per tray)", "Trays": "4 trays", "Runtime": "up to 11 h", "Charging": "4.5 h", "Cruise speed": "0.2-1.2 m/s", "Navigation": "VSLAM + LiDAR SLAM", "Path clearance": "65 cm", "Modes": "Delivery / Cruise / Recycle / Birthday / Guide"}
+      "use_cases": [
+        "food delivery",
+        "restaurant",
+        "hotel",
+        "cafe",
+        "bar",
+        "cafeteria",
+        "food court",
+        "table service",
+        "dish return"
+      ],
+      "specs": {
+        "Payload": "40 kg (10 kg per tray)",
+        "Trays": "4 trays",
+        "Runtime": "up to 11 h",
+        "Charging": "4.5 h",
+        "Cruise speed": "0.2-1.2 m/s",
+        "Navigation": "VSLAM + LiDAR SLAM",
+        "Path clearance": "65 cm",
+        "Modes": "Delivery / Cruise / Recycle / Birthday / Guide"
+      },
+      "image": "https://www.ustarx.ai/media/product-image/6f356fae832f_1793232192.jpg"
     },
     {
       "id": "agibot-a2-ultra",
@@ -20,8 +40,30 @@
       "lease_usd_month": 5000,
       "url": "https://www.ustarx.ai/products/agibot-a2-ultra",
       "summary": "Full-size humanoid deployed commercially at scale (CR, CE-MD, CE-RED, FCC certified). Professional guide and receptionist: proactive greeting, VIP service, guided tours, free-form Q&A on enterprise knowledge bases, multilingual. Also entertainment performances and brand ambassador.",
-      "use_cases": ["reception", "receptionist", "guided tours", "front desk", "lobby", "vip guests", "brand ambassador", "entertainment", "performance", "exhibition", "hotel", "showroom"],
-      "specs": {"Height": "169 cm", "Weight": "69 kg", "Total DoF": "40", "Walking speed": "0.8 m/s", "Battery life": "3 h", "Sensors": "LiDAR + fisheye + RGBD + RGB cameras", "Compute": "NVIDIA Jetson Orin"}
+      "use_cases": [
+        "reception",
+        "receptionist",
+        "guided tours",
+        "front desk",
+        "lobby",
+        "vip guests",
+        "brand ambassador",
+        "entertainment",
+        "performance",
+        "exhibition",
+        "hotel",
+        "showroom"
+      ],
+      "specs": {
+        "Height": "169 cm",
+        "Weight": "69 kg",
+        "Total DoF": "40",
+        "Walking speed": "0.8 m/s",
+        "Battery life": "3 h",
+        "Sensors": "LiDAR + fisheye + RGBD + RGB cameras",
+        "Compute": "NVIDIA Jetson Orin"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-a2-ultra/A2-1.png"
     },
     {
       "id": "agibot-a2-lite",
@@ -31,8 +73,26 @@
       "lease_usd_month": null,
       "url": "https://www.ustarx.ai/products/agibot-a2-lite",
       "summary": "Cost-effective full-size humanoid for entertainment and commercial performance. Multi-robot fleet control, drag-and-drop choreography, dozens of performance types (Tai Chi, drumming, dancing). Brand ambassador for promotions and events.",
-      "use_cases": ["entertainment", "performance", "dance", "show", "events", "brand ambassador", "promotion", "marketing", "fleet"],
-      "specs": {"Height": "169 cm", "Weight": "63 kg", "Total DoF": "23", "Walking speed": "0.8 m/s", "Battery life": "4.5 h", "Fleet control": "Yes"}
+      "use_cases": [
+        "entertainment",
+        "performance",
+        "dance",
+        "show",
+        "events",
+        "brand ambassador",
+        "promotion",
+        "marketing",
+        "fleet"
+      ],
+      "specs": {
+        "Height": "169 cm",
+        "Weight": "63 kg",
+        "Total DoF": "23",
+        "Walking speed": "0.8 m/s",
+        "Battery life": "4.5 h",
+        "Fleet control": "Yes"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-a2-lite/A2-3.png"
     },
     {
       "id": "agibot-a2-w",
@@ -42,8 +102,30 @@
       "lease_usd_month": null,
       "url": "https://www.ustarx.ai/products/agibot-a2-w",
       "summary": "Wheeled general-purpose dual-arm robot for flexible manufacturing: tote depalletizing/palletizing, loading/unloading, inter-workstation material transfer. Hot-swappable battery for 24-hour operation, open APIs and SDK.",
-      "use_cases": ["manufacturing", "factory", "warehouse", "logistics", "palletizing", "depalletizing", "tote handling", "material transfer", "loading", "assembly", "picking"],
-      "specs": {"Weight": "230 kg", "Total DoF": "22", "Max dual-arm payload": "15 kg", "Working height": "0-2 m", "Top speed": "1 m/s", "Battery life": "5 h, hot-swappable", "Compute": "275 TOPS", "Perception": "360 degree LiDAR + visual-force"}
+      "use_cases": [
+        "manufacturing",
+        "factory",
+        "warehouse",
+        "logistics",
+        "palletizing",
+        "depalletizing",
+        "tote handling",
+        "material transfer",
+        "loading",
+        "assembly",
+        "picking"
+      ],
+      "specs": {
+        "Weight": "230 kg",
+        "Total DoF": "22",
+        "Max dual-arm payload": "15 kg",
+        "Working height": "0-2 m",
+        "Top speed": "1 m/s",
+        "Battery life": "5 h, hot-swappable",
+        "Compute": "275 TOPS",
+        "Perception": "360 degree LiDAR + visual-force"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-a2-w/20260227-144838.png"
     },
     {
       "id": "agibot-g2",
@@ -53,8 +135,27 @@
       "lease_usd_month": 12000,
       "url": "https://www.ustarx.ai/products/agibot-g2",
       "summary": "Industrial-grade general-purpose humanoid with high-precision force-controlled dual arms (sub-millimeter), multi-person voice interaction and knowledge-base Q&A, omnidirectional movement, hot-swappable dual batteries and auto recharging. Rich SDK for custom development.",
-      "use_cases": ["logistics", "sorting", "security inspection", "patrol", "research", "education", "university", "manipulation", "industrial", "lab"],
-      "specs": {"Height": "122.5-179.5 cm", "Weight": "185 kg", "DoF (excl. end effector)": "26", "Edge compute": "2070 TFLOPS", "Battery life": "4 h+", "Single arm span": "69.5 cm"}
+      "use_cases": [
+        "logistics",
+        "sorting",
+        "security inspection",
+        "patrol",
+        "research",
+        "education",
+        "university",
+        "manipulation",
+        "industrial",
+        "lab"
+      ],
+      "specs": {
+        "Height": "122.5-179.5 cm",
+        "Weight": "185 kg",
+        "DoF (excl. end effector)": "26",
+        "Edge compute": "2070 TFLOPS",
+        "Battery life": "4 h+",
+        "Single arm span": "69.5 cm"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-g2/new%20G2.png"
     },
     {
       "id": "agibot-x2",
@@ -64,8 +165,27 @@
       "lease_usd_month": 2200,
       "url": "https://www.ustarx.ai/products/agibot-x2",
       "summary": "Half-size humanoid for entertainment and commercial performance. Customizable persona and voice, facial/gesture/pose recognition, 30+ animated expressions, touch response, 20+ preset motions. Lightweight with a flexible shell for safety.",
-      "use_cases": ["receptionist", "in-store", "retail", "tourism", "brand ambassador", "entertainment", "interaction", "kids", "school"],
-      "specs": {"Height": "131 cm", "Weight": "35 kg", "Total DoF": "25", "Max payload": "3 kg", "Max walking speed": "2 m/s", "Battery": "500 Wh", "Battery life": "2 h"}
+      "use_cases": [
+        "receptionist",
+        "in-store",
+        "retail",
+        "tourism",
+        "brand ambassador",
+        "entertainment",
+        "interaction",
+        "kids",
+        "school"
+      ],
+      "specs": {
+        "Height": "131 cm",
+        "Weight": "35 kg",
+        "Total DoF": "25",
+        "Max payload": "3 kg",
+        "Max walking speed": "2 m/s",
+        "Battery": "500 Wh",
+        "Battery life": "2 h"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-x2/X2%20.png"
     },
     {
       "id": "agibot-x2-ultra",
@@ -75,8 +195,31 @@
       "lease_usd_month": 3583,
       "url": "https://www.ustarx.ai/products/agibot-x2-ultra",
       "summary": "Half-size humanoid for exhibition guide, in-store receptionist, tourism ambassador or research and education advocate. Autonomous narration and knowledge-base Q&A, facial recognition greetings, LiDAR mapping with obstacle avoidance, optional dexterous hands and VR teleoperation.",
-      "use_cases": ["exhibition guide", "museum", "tour guide", "receptionist", "in-store", "retail", "front desk", "education", "research", "brand ambassador", "hospital lobby", "school"],
-      "specs": {"Height": "131 cm", "Weight": "39 kg", "Total DoF": "30", "Max payload": "3 kg", "Max walking speed": "2 m/s", "Battery life": "2 h", "Compute": "NVIDIA Orin NX 16GB", "Secondary development": "Yes"}
+      "use_cases": [
+        "exhibition guide",
+        "museum",
+        "tour guide",
+        "receptionist",
+        "in-store",
+        "retail",
+        "front desk",
+        "education",
+        "research",
+        "brand ambassador",
+        "hospital lobby",
+        "school"
+      ],
+      "specs": {
+        "Height": "131 cm",
+        "Weight": "39 kg",
+        "Total DoF": "30",
+        "Max payload": "3 kg",
+        "Max walking speed": "2 m/s",
+        "Battery life": "2 h",
+        "Compute": "NVIDIA Orin NX 16GB",
+        "Secondary development": "Yes"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-x2-ultra/X2%20ultra.png"
     },
     {
       "id": "agibot-d1-maxpro",
@@ -86,8 +229,28 @@
       "lease_usd_month": 5250,
       "url": "https://www.ustarx.ai/products/agibot-d1-maxpro",
       "summary": "Heavy-payload quadruped for industrial inspection (meter reading, defect detection, abnormal temperature), emergency response (gas and life detection) and heavy logistics. IP67, autonomous return-to-charge.",
-      "use_cases": ["industrial inspection", "inspection", "emergency response", "gas detection", "heavy payload", "outdoor", "plant", "utility", "oil and gas"],
-      "specs": {"Weight": "64 kg", "Rated payload": "50 kg", "Runtime": "5.5 h (2.5 h at full payload)", "Stairs": "30 cm continuous", "Max speed": "3 m/s", "Max climb angle": "45 degrees", "Protection": "IP67", "Operating temp": "-20 to 55 C"}
+      "use_cases": [
+        "industrial inspection",
+        "inspection",
+        "emergency response",
+        "gas detection",
+        "heavy payload",
+        "outdoor",
+        "plant",
+        "utility",
+        "oil and gas"
+      ],
+      "specs": {
+        "Weight": "64 kg",
+        "Rated payload": "50 kg",
+        "Runtime": "5.5 h (2.5 h at full payload)",
+        "Stairs": "30 cm continuous",
+        "Max speed": "3 m/s",
+        "Max climb angle": "45 degrees",
+        "Protection": "IP67",
+        "Operating temp": "-20 to 55 C"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-d1-maxpro/D1%20MAX%20PRO-1.jpeg"
     },
     {
       "id": "agibot-d1-max",
@@ -97,8 +260,26 @@
       "lease_usd_month": 3333,
       "url": "https://www.ustarx.ai/products/agibot-d1-max",
       "summary": "Lightweight wheel-leg quadruped with near 1:1 payload-to-weight ratio for security patrol, cable temperature and damage inspection, and research. Vision, LiDAR, ultrasonic and IMU sensors; IP67; autonomous return-to-charge.",
-      "use_cases": ["security patrol", "security", "patrol", "inspection", "cable inspection", "research", "outdoor", "campus"],
-      "specs": {"Weight": "40 kg", "Rated payload": "30 kg", "Runtime at payload": "3.5 h", "Stairs": "22 cm continuous", "Max speed": "8 m/s", "Max climb angle": "45 degrees", "Protection": "IP67"}
+      "use_cases": [
+        "security patrol",
+        "security",
+        "patrol",
+        "inspection",
+        "cable inspection",
+        "research",
+        "outdoor",
+        "campus"
+      ],
+      "specs": {
+        "Weight": "40 kg",
+        "Rated payload": "30 kg",
+        "Runtime at payload": "3.5 h",
+        "Stairs": "22 cm continuous",
+        "Max speed": "8 m/s",
+        "Max climb angle": "45 degrees",
+        "Protection": "IP67"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-d1-max/20251126-212313.png"
     },
     {
       "id": "agibot-d1-ultra",
@@ -108,8 +289,23 @@
       "lease_usd_month": 717,
       "url": "https://www.ustarx.ai/products/agibot-d1-ultra",
       "summary": "Compact, agile all-terrain quadruped (reinforcement-learning locomotion) for light security patrol, industrial inspection, research and education, with expansion interfaces for secondary development.",
-      "use_cases": ["security patrol", "inspection", "research", "education", "entertainment", "low budget"],
-      "specs": {"Weight": "15 kg", "Rated payload": "5 kg", "Runtime at payload": "1 h", "Stairs": "16 cm", "Max running speed": "3.7 m/s", "Protection": "IP54"}
+      "use_cases": [
+        "security patrol",
+        "inspection",
+        "research",
+        "education",
+        "entertainment",
+        "low budget"
+      ],
+      "specs": {
+        "Weight": "15 kg",
+        "Rated payload": "5 kg",
+        "Runtime at payload": "1 h",
+        "Stairs": "16 cm",
+        "Max running speed": "3.7 m/s",
+        "Protection": "IP54"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-d1-ultra/D1%20Ultra-1.png"
     },
     {
       "id": "agibot-d1-edu",
@@ -119,8 +315,24 @@
       "lease_usd_month": 600,
       "url": "https://www.ustarx.ai/products/agibot-d1-edu",
       "summary": "Compact agile quadruped for educational research, performances and interactive entertainment, supporting secondary development and customization.",
-      "use_cases": ["education", "university", "research", "student", "entertainment", "performance", "rental"],
-      "specs": {"Weight": "15 kg", "Rated payload": "5 kg", "Battery life": "1-2 h", "Stairs": "16 cm", "Max running speed": "3.7 m/s", "Vertical jump": "35 cm"}
+      "use_cases": [
+        "education",
+        "university",
+        "research",
+        "student",
+        "entertainment",
+        "performance",
+        "rental"
+      ],
+      "specs": {
+        "Weight": "15 kg",
+        "Rated payload": "5 kg",
+        "Battery life": "1-2 h",
+        "Stairs": "16 cm",
+        "Max running speed": "3.7 m/s",
+        "Vertical jump": "35 cm"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-d1-edu/D1%20Edu%20Pro-1.png"
     },
     {
       "id": "agibot-d1-edu-pro",
@@ -130,8 +342,30 @@
       "lease_usd_month": 917,
       "url": "https://www.ustarx.ai/products/agibot-d1-edu-pro",
       "summary": "D1 Edu quadruped plus an education top-mount kit purpose-built for ROS/ROS2 courses and labs: Qualcomm QCS8550 compute (Ubuntu 22.04), Orbbec 3D camera, 360 degree LiDAR, far-field voice module and touch display. For SLAM, object recognition and robotics curriculum.",
-      "use_cases": ["ros", "ros2", "robotics course", "curriculum", "lab", "university", "college", "school", "education", "research", "slam", "teaching"],
-      "specs": {"Compute": "Qualcomm QCS8550, Ubuntu 22.04, 16GB + 128GB", "LiDAR": "360 degree, 40 m range, 148,000 pts/s", "3D camera": "Orbbec active-stereo, 0.2-2.5 m", "Voice": "4-mic far-field array", "Display": "4.3 inch touch", "Battery life": "1-2 h", "Max running speed": "3.7 m/s"}
+      "use_cases": [
+        "ros",
+        "ros2",
+        "robotics course",
+        "curriculum",
+        "lab",
+        "university",
+        "college",
+        "school",
+        "education",
+        "research",
+        "slam",
+        "teaching"
+      ],
+      "specs": {
+        "Compute": "Qualcomm QCS8550, Ubuntu 22.04, 16GB + 128GB",
+        "LiDAR": "360 degree, 40 m range, 148,000 pts/s",
+        "3D camera": "Orbbec active-stereo, 0.2-2.5 m",
+        "Voice": "4-mic far-field array",
+        "Display": "4.3 inch touch",
+        "Battery life": "1-2 h",
+        "Max running speed": "3.7 m/s"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-d1-edu-pro/84ec5863756ad1c7bb77b1ea537ed856.jpg"
     },
     {
       "id": "agibot-d1-pro",
@@ -141,8 +375,24 @@
       "lease_usd_month": 308,
       "url": "https://www.ustarx.ai/products/agibot-d1-pro",
       "summary": "Entry-level compact quadruped for group performances, paid rentals, interactive entertainment and basic educational research.",
-      "use_cases": ["entertainment", "performance", "rental", "kids", "education", "low budget", "cheapest"],
-      "specs": {"Weight": "15 kg", "Rated payload": "5 kg", "Battery life": "1-2 h", "Stairs": "16 cm", "Max running speed": "3.7 m/s", "Vertical jump": "35 cm"}
+      "use_cases": [
+        "entertainment",
+        "performance",
+        "rental",
+        "kids",
+        "education",
+        "low budget",
+        "cheapest"
+      ],
+      "specs": {
+        "Weight": "15 kg",
+        "Rated payload": "5 kg",
+        "Battery life": "1-2 h",
+        "Stairs": "16 cm",
+        "Max running speed": "3.7 m/s",
+        "Vertical jump": "35 cm"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-d1-pro/D1%20Edu%20Pro-1.png"
     },
     {
       "id": "agibot-c5",
@@ -152,8 +402,29 @@
       "lease_usd_month": 1642,
       "url": "https://www.ustarx.ai/products/agibot-c5",
       "summary": "Intelligent cleaning robot for mid-to-large indoor spaces: sweeping, scrubbing and dry mopping in one unit. LiDAR + visual navigation, automated station (auto charging, refill and drain, self-cleaning dirty water tank), works with access control and elevators for unattended operation.",
-      "use_cases": ["cleaning", "floor cleaning", "janitorial", "supermarket", "office building", "airport", "transportation hub", "factory", "mall", "hospital", "facility management"],
-      "specs": {"Max cleaning efficiency": "1980 m2/h", "Scrubbing width": "550 mm", "Scrubbing runtime": "3 h", "Water tank": "90 L", "Debris pickup rate": "95%", "Noise": "<68 dB(A)", "Weight": "170 kg"}
+      "use_cases": [
+        "cleaning",
+        "floor cleaning",
+        "janitorial",
+        "supermarket",
+        "office building",
+        "airport",
+        "transportation hub",
+        "factory",
+        "mall",
+        "hospital",
+        "facility management"
+      ],
+      "specs": {
+        "Max cleaning efficiency": "1980 m2/h",
+        "Scrubbing width": "550 mm",
+        "Scrubbing runtime": "3 h",
+        "Water tank": "90 L",
+        "Debris pickup rate": "95%",
+        "Noise": "<68 dB(A)",
+        "Weight": "170 kg"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/agibot-c5/C5_1.png"
     },
     {
       "id": "omnihand-2025",
@@ -163,8 +434,24 @@
       "lease_usd_month": 417,
       "url": "https://www.ustarx.ai/products/omnihand-2025",
       "summary": "Compact 16-DoF interactive dexterous hand compatible with mainstream humanoids and robot arms. 400+ force-sensing taxels, anti-pinch design. Gesture interaction, imitation/reinforcement learning research, light grasping.",
-      "use_cases": ["dexterous hand", "gripper", "grasping", "research", "imitation learning", "reinforcement learning", "humanoid accessory", "gesture interaction"],
-      "specs": {"DoF": "10 active + 6 passive", "Weight": "500 g", "Max fingertip force": "5 N", "Tactile": "400+ taxels", "Interface": "CANFD/RS485"}
+      "use_cases": [
+        "dexterous hand",
+        "gripper",
+        "grasping",
+        "research",
+        "imitation learning",
+        "reinforcement learning",
+        "humanoid accessory",
+        "gesture interaction"
+      ],
+      "specs": {
+        "DoF": "10 active + 6 passive",
+        "Weight": "500 g",
+        "Max fingertip force": "5 N",
+        "Tactile": "400+ taxels",
+        "Interface": "CANFD/RS485"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/omnihand-2025/OK.png"
     },
     {
       "id": "omnihand-pro-2025",
@@ -174,14 +461,54 @@
       "lease_usd_month": 1275,
       "url": "https://www.ustarx.ai/products/omnihand-pro-2025",
       "summary": "19-DoF industrial-grade dexterous hand with multi-modal tactile sensing (0.01 N sensitivity) for precision grasping, sorting, tool manipulation and manipulation research.",
-      "use_cases": ["dexterous hand", "gripper", "precision grasping", "tool manipulation", "sorting", "industrial", "research", "manipulation"],
-      "specs": {"DoF": "12 active + 7 passive", "Weight": "750 g", "Max fingertip force": "20 N", "Tactile": "fingertip 3-axis force, 150+ taxels", "Interface": "CANFD"}
+      "use_cases": [
+        "dexterous hand",
+        "gripper",
+        "precision grasping",
+        "tool manipulation",
+        "sorting",
+        "industrial",
+        "research",
+        "manipulation"
+      ],
+      "specs": {
+        "DoF": "12 active + 7 passive",
+        "Weight": "750 g",
+        "Max fingertip force": "20 N",
+        "Tactile": "fingertip 3-axis force, 150+ taxels",
+        "Interface": "CANFD"
+      },
+      "image": "https://www.ustarx.ai/media/product-images/omnihand-pro-2025/20250815-183019.png"
     }
   ],
   "virtual_agents": [
-    {"id": "customer-service-ai", "name": "Customer Service AI", "url": "https://www.ustarx.ai/products/customer-service-ai", "summary": "24/7 support over chat, voice and phone with seamless human hand-off. Agents: AI Chatbot, AI Voice Agent, AI Call Center."},
-    {"id": "sales-ai", "name": "Sales AI", "url": "https://www.ustarx.ai/products/sales-ai", "summary": "Qualifies leads, generates quotes, keeps the CRM up to date. Agents: Lead Qualification, Quote Generation, CRM Assistant."},
-    {"id": "operations-ai", "name": "Operations AI", "url": "https://www.ustarx.ai/products/operations-ai", "summary": "Automates workflows, document extraction and routing, email triage, meeting notes."},
-    {"id": "industry-ai", "name": "Industry AI", "url": "https://www.ustarx.ai/products/industry-ai", "summary": "Domain assistants for schools, laboratories, healthcare and manufacturing, with compliance-aware answers and role-based access."}
+    {
+      "id": "customer-service-ai",
+      "name": "Customer Service AI",
+      "url": "https://www.ustarx.ai/products/customer-service-ai",
+      "summary": "24/7 support over chat, voice and phone with seamless human hand-off. Agents: AI Chatbot, AI Voice Agent, AI Call Center.",
+      "image": "https://www.ustarx.ai/media/site-images/agentCustomer.jpg"
+    },
+    {
+      "id": "sales-ai",
+      "name": "Sales AI",
+      "url": "https://www.ustarx.ai/products/sales-ai",
+      "summary": "Qualifies leads, generates quotes, keeps the CRM up to date. Agents: Lead Qualification, Quote Generation, CRM Assistant.",
+      "image": "https://www.ustarx.ai/media/site-images/agentSales.jpg"
+    },
+    {
+      "id": "operations-ai",
+      "name": "Operations AI",
+      "url": "https://www.ustarx.ai/products/operations-ai",
+      "summary": "Automates workflows, document extraction and routing, email triage, meeting notes.",
+      "image": "https://www.ustarx.ai/media/site-images/agentOperations.jpg"
+    },
+    {
+      "id": "industry-ai",
+      "name": "Industry AI",
+      "url": "https://www.ustarx.ai/products/industry-ai",
+      "summary": "Domain assistants for schools, laboratories, healthcare and manufacturing, with compliance-aware answers and role-based access.",
+      "image": "https://www.ustarx.ai/media/site-images/agentIndustry.jpg"
+    }
   ]
 }

@@ -79,10 +79,14 @@ Rules (strict):
 - Every price, number or spec you write must appear in FACTS. Never estimate or round.
 - If a product's price is not published, say so and offer a quote. Do not guess a price.
 - If nothing in FACTS fits, say so honestly and offer to connect them with a specialist.
-- Explain in 1 line WHY each recommendation fits their use case.
 - If budget is given, say clearly which options fit it.
-- Keep it short: at most 2 recommendations, plain language, under 150 words.
-- End with ONE helpful question (e.g. size of venue, buy vs lease, or offer a demo)."""
+- At most 2 recommendations, plain language, under 130 words.
+Format (markdown):
+1. One short opening sentence that reflects their need.
+2. One bullet per product: "- **Exact Product Name**: why it fits, in one line. Price."
+3. If useful, one short line on buy vs lease using the given numbers.
+4. End with ONE helpful question on its own line (e.g. venue size, buy vs lease, or a demo).
+No headings, no tables, no emojis."""
 
 
 def _history_text(history: list[dict], limit: int = 6) -> str:

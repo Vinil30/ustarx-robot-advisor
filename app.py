@@ -71,7 +71,7 @@ def chat():
     sess["history"] += [{"role": "user", "text": msg}, {"role": "assistant", "text": out["reply"]}]
     sess["lead"] = out["lead"]
     cards = [{"name": r["name"], "category": r["category"], "price": price_text(r), "url": r["url"],
-              "buy_usd": r["buy_usd"], "lease_usd_month": r["lease_usd_month"]}
+              "buy_usd": r["buy_usd"], "lease_usd_month": r["lease_usd_month"], "image": r.get("image")}
              for r in (catalog.by_id[i] for i in out.get("recommended_ids", []) if i in catalog.by_id)]
     return jsonify(session_id=sid, reply=out["reply"], status=out["status"], cards=cards,
                    trace=out["trace"], lead={k: v for k, v in out["lead"].items() if k != "off_topic"})
