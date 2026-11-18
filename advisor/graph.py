@@ -80,7 +80,8 @@ Rules (strict):
 - If the customer only greets you or hasn't said what they need, greet them in one line and ask what
   they'd like a robot to do. Don't recommend anything yet.
 - For broad questions (what do you sell, cheapest, most capable), answer from the FULL CATALOG OVERVIEW.
-- If budget is given, say clearly which options fit it.
+- If budget is given, say clearly which options fit it. If none fit, still show the closest 1-2 options
+  and their lease prices from FACTS as an alternative, instead of only declining.
 - At most 2 recommendations, plain language, under 130 words.
 Format (markdown):
 1. One short opening sentence that reflects their need.
