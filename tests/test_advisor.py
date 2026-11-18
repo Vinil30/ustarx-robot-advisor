@@ -5,22 +5,32 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from advisor.catalog import Catalog
-from advisor.graph import Draft, Needs, build_graph
+from advisor.graph import Needs, build_graph
 from advisor.pricing import cost_facts
 from advisor.verify import check_reply
 
 CAT = Catalog()
 
 
+def Draft(reply, recommended_ids=None):
+    """Drafts are plain text now; recommended products are read from the text by the graph."""
+    return reply
+
+
 class FakeLLM:
-    """Returns queued Needs / Draft objects in order."""
+    """Returns queued Needs objects (structured) and reply strings (text) in order.
+    A Needs entry that is an Exception is raised, to simulate a provider failure."""
     def __init__(self, needs, drafts):
         self.needs, self.drafts = list(needs), list(drafts)
         self.draft_prompts = []
 
     def structured(self, schema, system, user):
-        if schema is Needs:
-            return self.needs.pop(0)
+        n = self.needs.pop(0)
+        if isinstance(n, Exception):
+            raise n
+        return n
+
+    def text(self, system, user):
         self.draft_prompts.append(user)
         return self.drafts.pop(0)
 
@@ -114,3 +124,34 @@ def test_demo_request_asks_for_email_then_saves_lead(tmp_path):
                "owner@example.com", tmp_path, lead=out["lead"])
     assert (tmp_path / "leads.jsonl").exists()
     assert out2["lead"]["tier"] == "hot"
+
+
+def test_recommended_products_are_read_from_reply_text(tmp_path):
+    reply = "- **AGIBOT D1 Edu Pro**: ROS2 kit, $10,999.\n- **AGIBOT D1 Edu**: cheaper, $7,199."
+    needs = Needs(off_topic=False, search_query="ros2 university course", use_case="ros2 course")
+    out = run(FakeLLM([needs], [reply]), "ros2 course robot", tmp_path)
+    assert out["recommended_ids"] == ["agibot-d1-edu-pro", "agibot-d1-edu"]
+    assert out["status"] == "grounded"
+
+
+def test_broad_question_uses_full_catalog_overview(tmp_path):
+    needs = Needs(off_topic=False, search_query="cheapest", browsing_catalog=True)
+    llm = FakeLLM([needs], ["The most affordable is the **AGIBOT D1 Pro** at $3,699."])
+    out = run(llm, "cheapest robot?", tmp_path)
+    assert "FULL CATALOG OVERVIEW" in llm.draft_prompts[0]
+    assert out["status"] == "grounded"
+    assert out["recommended_ids"] == ["agibot-d1-pro"]
+
+
+def test_extraction_failure_does_not_crash(tmp_path):
+    llm = FakeLLM([RuntimeError("tool_use_failed")], ["Hi! What would you like a robot to do for your business?"])
+    out = run(llm, "hi", tmp_path)
+    assert out["status"] == "grounded"
+
+
+def test_virtual_agents_are_grounded_and_carded(tmp_path):
+    needs = Needs(off_topic=False, search_query="customer support chatbot", wants_virtual_agents=True)
+    out = run(FakeLLM([needs], ["- **Customer Service AI**: 24/7 chat and voice support. Price on request."]),
+              "Do you sell chatbots?", tmp_path)
+    assert out["status"] == "grounded"
+    assert out["recommended_ids"] == ["customer-service-ai"]

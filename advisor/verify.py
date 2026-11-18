@@ -36,7 +36,7 @@ def check_reply(reply: str, allowed_text: str, user_text: str,
     mentioned = catalog.mentioned_names(reply)
     ungrounded = mentioned - allowed_ids
     if ungrounded:
-        names = [catalog.by_id[i]["name"] for i in sorted(ungrounded)]
+        names = [catalog.all_by_id[i]["name"] for i in sorted(ungrounded)]
         problems.append(f"Mentions products without facts for them: {names}")
 
     allowed_numbers = _numbers(allowed_text) | _numbers(user_text)
@@ -45,7 +45,7 @@ def check_reply(reply: str, allowed_text: str, user_text: str,
         problems.append(f"Numbers not found in the facts (possible invented price/spec): {invented}")
 
     for rid in mentioned & allowed_ids:
-        robot = catalog.by_id[rid]
+        robot = catalog.all_by_id[rid]
         if robot["buy_usd"] is None and re.search(re.escape(robot["name"]) + r"[^.\n]{0,80}\$\d", reply, re.I):
             problems.append(f"Quoted a price for {robot['name']}, whose price is not published")
 

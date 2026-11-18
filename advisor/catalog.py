@@ -21,6 +21,12 @@ class Catalog:
         self.robots: list[dict] = data["robots"]
         self.virtual_agents: list[dict] = data["virtual_agents"]
         self.by_id = {r["id"]: r for r in self.robots}
+        for a in self.virtual_agents:   # agents have no published price
+            a.setdefault("category", "Virtual AI agent")
+            a.setdefault("buy_usd", None)
+            a.setdefault("lease_usd_month", None)
+        self.agents_by_id = {a["id"]: a for a in self.virtual_agents}
+        self.all_by_id = {**self.by_id, **self.agents_by_id}
         # Use-case tags are repeated so a direct match ("restaurant") outweighs a passing mention.
         self._docs = [
             tokenize(" ".join([r["name"], r["category"], r["summary"]] + r["use_cases"] * 3))
@@ -47,22 +53,34 @@ class Catalog:
         scored.sort(key=lambda x: -x[0])
         return [r for _, r in scored[:k]]
 
-    def mentioned_names(self, text: str) -> set[str]:
-        """Product ids whose name appears in text. Longest names first so 'D1 Edu Pro' is not also read as 'D1 Edu'."""
-        found, low = set(), text.lower()
-        for r in sorted(self.robots, key=lambda r: -len(r["name"])):
-            name = r["name"].lower()
-            short = name.replace("agibot ", "")
-            for variant in (name, short):
-                if re.search(r"(?<![a-z0-9])" + re.escape(variant) + r"(?![a-z0-9])", low):
-                    found.add(r["id"])
-                    low = low.replace(variant, " ")
+    def mentions_in_order(self, text: str) -> list[str]:
+        """Ids of robots/agents named in text, in order of first appearance.
+        Longest names are matched first so 'D1 Edu Pro' is not also read as 'D1 Edu'."""
+        low = text.lower()
+        hits: dict[str, int] = {}
+        for item in sorted(self.all_by_id.values(), key=lambda r: -len(r["name"])):
+            name = item["name"].lower()
+            for variant in dict.fromkeys((name, name.replace("agibot ", ""))):
+                m = re.search(r"(?<![a-z0-9])" + re.escape(variant) + r"(?![a-z0-9])", low)
+                if m:
+                    hits[item["id"]] = m.start()
+                    low = low.replace(variant, " " * len(variant))   # keep positions stable
                     break
-        return found
+        return sorted(hits, key=hits.get)
+
+    def mentioned_names(self, text: str) -> set[str]:
+        return set(self.mentions_in_order(text))
+
+    def overview(self, include_agents: bool = False) -> str:
+        """One line per product, for broad questions ('what do you sell?', 'cheapest robot?')."""
+        lines = [f"[{r['id']}] {r['name']} ({r['category']}): {price_text(r)}" for r in self.robots]
+        if include_agents:
+            lines += [f"[{a['id']}] {a['name']} (virtual AI agent): {a['summary']}" for a in self.virtual_agents]
+        return "FULL CATALOG OVERVIEW:\n" + "\n".join(lines)
 
 
 def price_text(robot: dict) -> str:
-    if robot["buy_usd"] is None:
+    if robot.get("buy_usd") is None:
         return "Price: not published (contact USTARX for a quote)"
     return f"Buy: ${robot['buy_usd']:,} | Lease: ${robot['lease_usd_month']:,}/month"
 

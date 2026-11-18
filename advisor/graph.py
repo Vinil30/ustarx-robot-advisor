@@ -27,6 +27,7 @@ LEADS_PATH = Path(__file__).resolve().parent.parent / "data" / "leads.jsonl"
 
 class LLM(Protocol):
     def structured(self, schema: type[BaseModel], system: str, user: str) -> BaseModel: ...
+    def text(self, system: str, user: str) -> str: ...
 
 
 class Needs(BaseModel):
@@ -39,16 +40,13 @@ class Needs(BaseModel):
     quantity: Optional[int] = Field(None, description="Number of robots if stated")
     prefers: Literal["buy", "lease", "unknown"] = "unknown"
     wants_virtual_agents: bool = Field(False, description="Asks about chatbots, AI agents, CRM, software automation")
+    browsing_catalog: bool = Field(False, description="Asks what products exist, the cheapest/most expensive, "
+                                   "a general comparison, or has not described a specific need yet")
     wants_demo_or_quote: bool = Field(False, description="True only if the customer explicitly asks to book a demo, "
                                       "receive a formal quote, or be contacted. A price question alone is NOT this.")
     name: Optional[str] = None
     email: Optional[str] = None
     company: Optional[str] = None
-
-
-class Draft(BaseModel):
-    reply: str = Field(description="The message to the customer")
-    recommended_ids: list[str] = Field(description="Catalog ids of the products recommended in the reply")
 
 
 # ---------- State ----------
@@ -79,6 +77,9 @@ Rules (strict):
 - Every price, number or spec you write must appear in FACTS. Never estimate or round.
 - If a product's price is not published, say so and offer a quote. Do not guess a price.
 - If nothing in FACTS fits, say so honestly and offer to connect them with a specialist.
+- If the customer only greets you or hasn't said what they need, greet them in one line and ask what
+  they'd like a robot to do. Don't recommend anything yet.
+- For broad questions (what do you sell, cheapest, most capable), answer from the FULL CATALOG OVERVIEW.
 - If budget is given, say clearly which options fit it.
 - At most 2 recommendations, plain language, under 130 words.
 Format (markdown):
@@ -86,7 +87,7 @@ Format (markdown):
 2. One bullet per product: "- **Exact Product Name**: why it fits, in one line. Price."
 3. If useful, one short line on buy vs lease using the given numbers.
 4. End with ONE helpful question on its own line (e.g. venue size, buy vs lease, or a demo).
-No headings, no tables, no emojis."""
+No headings, no tables, no emojis. Reply with the message text only."""
 
 
 def _history_text(history: list[dict], limit: int = 6) -> str:
@@ -97,7 +98,11 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
 
     def understand(state: State) -> State:
         convo = _history_text(state.get("history", [])) + f"\nuser: {state['user_msg']}"
-        needs = llm.structured(Needs, UNDERSTAND_SYSTEM, convo).model_dump()
+        try:
+            needs = llm.structured(Needs, UNDERSTAND_SYSTEM, convo).model_dump()
+        except Exception:
+            # Extraction failed: carry on with the raw message as the search query instead of erroring out.
+            needs = Needs(off_topic=False, search_query=state["user_msg"]).model_dump()
         lead = dict(state.get("lead") or {})
         for k, v in needs.items():
             if v not in (None, "", "unknown", False) or k not in lead:
@@ -129,13 +134,22 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
                     fits = c["buy_total_usd"] <= lead["budget_usd"]
                     block += f"\n  Within stated budget of ${lead['budget_usd']:,} (buying): {'yes' if fits else 'no'}"
             blocks.append(block)
-        if lead.get("wants_virtual_agents"):
-            blocks += [f"[{a['id']}] {a['name']} (virtual AI agent): {a['summary']} Page: {a['url']}"
-                       for a in catalog.virtual_agents]
-        facts = "\n\n".join(blocks) if blocks else "(no matching products found)"
-        return {"retrieved_ids": [r["id"] for r in robots], "facts": facts,
-                "trace": state["trace"] + [{"step": "retrieve", "query": query,
-                                            "results": [r["name"] for r in robots]}]}
+        ids = [r["id"] for r in robots]
+        wants_agents = state["needs"]["wants_virtual_agents"]
+        if wants_agents:
+            blocks += [f"[{a['id']}] {a['name']} (virtual AI agent): {a['summary']} "
+                       f"Price: not published (custom quote). Page: {a['url']}" for a in catalog.virtual_agents]
+            ids += list(catalog.agents_by_id)
+        # Broad question or no keyword match: give the model the whole catalog in one line per product.
+        if state["needs"]["browsing_catalog"] or not robots:
+            blocks.append(catalog.overview(include_agents=wants_agents))
+            ids = list(dict.fromkeys(ids + list(catalog.by_id)))
+        facts = "\n\n".join(blocks)
+        names = [r["name"] for r in robots] + (["AI agents"] if wants_agents else [])
+        if state["needs"]["browsing_catalog"] or not robots:
+            names.append("full catalog overview")
+        return {"retrieved_ids": ids, "facts": facts,
+                "trace": state["trace"] + [{"step": "retrieve", "query": query, "results": names}]}
 
     def draft(state: State) -> State:
         lead = {k: v for k, v in state["lead"].items() if v not in (None, "", False, "unknown")}
@@ -146,15 +160,16 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
             prompt += ("\n\nYOUR PREVIOUS DRAFT WAS REJECTED BY THE FACT CHECKER:\n- "
                        + "\n- ".join(state["problems"])
                        + f"\nPrevious draft:\n{state['reply']}\nWrite a corrected reply.")
-        d = llm.structured(Draft, DRAFT_SYSTEM, prompt)
-        return {"reply": d.reply, "recommended_ids": d.recommended_ids,
+        reply = llm.text(DRAFT_SYSTEM, prompt).strip()
+        # Which products the reply recommends is read from the text itself, not trusted from the model.
+        recommended = catalog.mentions_in_order(reply)[:3]
+        return {"reply": reply, "recommended_ids": recommended,
                 "attempts": state.get("attempts", 0) + 1,
                 "trace": state["trace"] + [{"step": "draft", "attempt": state.get("attempts", 0) + 1,
-                                            "reply": d.reply}]}
+                                            "reply": reply}]}
 
     def verify(state: State) -> State:
-        agent_ids = {a["id"] for a in catalog.virtual_agents}
-        allowed = set(state["retrieved_ids"]) | (agent_ids if state["lead"].get("wants_virtual_agents") else set())
+        allowed = set(state["retrieved_ids"])
         problems = check_reply(state["reply"], state["facts"], state["user_msg"],
                                state["recommended_ids"], allowed, catalog)
         return {"problems": problems,
@@ -170,7 +185,7 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
 
     def safe_fallback(state: State) -> State:
         """Model kept failing the fact check: answer only with catalog text, no generated claims."""
-        robots = [catalog.by_id[i] for i in state["retrieved_ids"][:2]]
+        robots = [catalog.all_by_id[i] for i in state["retrieved_ids"][:2]]
         if robots:
             lines = ["Here is what I can confirm from our catalog:"]
             lines += [f"- {r['name']}: {price_text(r)}. {r['url']}" for r in robots]
@@ -224,5 +239,20 @@ class GroqLLM:
         from langchain_groq import ChatGroq
         self.chat = ChatGroq(model=model, api_key=api_key, temperature=0.2)
 
+    def _retry(self, fn, tries: int = 3):
+        """Groq sometimes rejects a generation (e.g. tool_use_failed). Retry a couple of times before giving up."""
+        last = None
+        for attempt in range(tries):
+            try:
+                return fn()
+            except Exception as e:
+                last = e
+                time.sleep(0.4 * (attempt + 1))
+        raise last
+
     def structured(self, schema, system, user):
-        return self.chat.with_structured_output(schema).invoke([("system", system), ("user", user)])
+        runnable = self.chat.with_structured_output(schema)
+        return self._retry(lambda: runnable.invoke([("system", system), ("user", user)]))
+
+    def text(self, system, user):
+        return self._retry(lambda: self.chat.invoke([("system", system), ("user", user)]).content)
