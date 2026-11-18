@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Advisor</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #16181d; --muted: #667085; --line: #e4e7ec;
+    --accent: #2f5bea; --accent-soft: #eaf0ff; --ok: #12805c; --ok-soft: #e6f6ef;
+    --warn: #b54708; --warn-soft: #fff4e5; --bad: #c01048; --bad-soft: #fdeef3; --user: #2f5bea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1115; --panel: #171a21; --text: #e7e9ee; --muted: #98a2b3; --line: #2a2f3a;
+      --accent: #7c9cff; --accent-soft: #1c2440; --ok: #4ade9b; --ok-soft: #12261d;
+      --warn: #fbbf62; --warn-soft: #2b2112; --bad: #ff7aa2; --bad-soft: #2b1520; --user: #3b5fd9;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel);
+           display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; }
+  header .tag { font-size: 12px; color: var(--muted); }
+  header button { margin-left: auto; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px;
+         max-width: 1280px; margin: 0 auto; height: calc(100vh - 58px); }
+  .chat, .trace { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+                  display: flex; flex-direction: column; min-height: 0; }
+  .msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; white-space: pre-wrap; }
+  .msg.user { align-self: flex-end; background: var(--user); color: #fff; }
+  .msg.bot { align-self: flex-start; background: var(--bg); border: 1px solid var(--line); }
+  .msg.err { align-self: center; background: var(--bad-soft); color: var(--bad); font-size: 14px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px;
+           margin-top: 8px; }
+  .badge.grounded { background: var(--ok-soft); color: var(--ok); }
+  .badge.fallback { background: var(--warn-soft); color: var(--warn); }
+  .badge.off_topic { background: var(--accent-soft); color: var(--accent); }
+  .cards { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel);
+          font-size: 13px; min-width: 180px; }
+  .card b { display: block; } .card span { color: var(--muted); display: block; }
+  .card a { color: var(--accent); text-decoration: none; font-size: 12px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 16px 10px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 99px;
+          padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  form { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
+  input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+          background: var(--bg); color: var(--text); font: inherit; min-width: 0; }
+  button { padding: 9px 16px; border-radius: 10px; border: 0; background: var(--accent); color: #fff;
+           font: inherit; font-weight: 600; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: .5; cursor: wait; }
+  .trace h2 { font-size: 14px; margin: 0; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .trace h2 small { color: var(--muted); font-weight: 400; display: block; }
+  .steps { overflow-y: auto; padding: 12px 16px; font-size: 13px; }
+  .step { border-left: 3px solid var(--line); padding: 4px 0 10px 10px; }
+  .step.ok { border-color: var(--ok); } .step.fail { border-color: var(--bad); }
+  .step.warn { border-color: var(--warn); }
+  .step b { display: block; }
+  .step code { font-size: 12px; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+  .empty { color: var(--muted); }
+  .typing { color: var(--muted); font-style: italic; }
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; height: auto; padding: 16px; }
+    .chat { height: 75vh; } .trace { max-height: 60vh; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Robot Advisor</h1>
+  <span class="tag">Unofficial demo for USTARX AI · built by Sai Vinil · data from ustarx.ai product pages</span>
+  <button class="ghost" id="reset">New chat</button>
+</header>
+<main>
+  <section class="chat">
+    <div class="msgs" id="msgs">
+      <div class="msg bot">Hi! I can help you pick the right robot for your business, compare buying vs leasing, and set up a demo. What would you like a robot to do?</div>
+    </div>
+    <div class="chips" id="chips">
+      <button class="chip">I run a 40-table restaurant and need 2 robots to deliver food</button>
+      <button class="chip">Our university wants a robot for a ROS2 course, budget $12,000</button>
+      <button class="chip">Something to greet visitors in our hospital lobby</button>
+      <button class="chip">How much is the AGIBOT A2 Lite?</button>
+    </div>
+    <form id="form">
+      <input id="input" autocomplete="off" placeholder="Describe what you need…">
+      <button id="send">Send</button>
+    </form>
+  </section>
+  <aside class="trace">
+    <h2>Agent trace <small>What the agent did for the last message</small></h2>
+    <div class="steps" id="steps"><p class="empty">Send a message to see the steps: understand → retrieve → draft → fact-check → lead scoring.</p></div>
+  </aside>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+let sid = null;
+try { sid = localStorage.getItem("advisor_sid"); } catch (e) {}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function add(cls, html) {
+  const d = document.createElement("div");
+  d.className = "msg " + cls; d.innerHTML = html;
+  $("#msgs").appendChild(d); $("#msgs").scrollTop = 1e9; return d;
+}
+
+const LABEL = {grounded: "✓ fact-checked against catalog", fallback: "⚠ safe fallback (draft failed fact-check)", off_topic: "off topic"};
+
+function renderTrace(trace, lead) {
+  const html = trace.map(s => {
+    if (s.step === "understand") {
+      const n = Object.fromEntries(Object.entries(s.needs).filter(([k, v]) => v !== null && v !== false && v !== "unknown" && v !== ""));
+      return `<div class="step"><b>1 · Understand</b><code>${esc(JSON.stringify(n, null, 1))}</code></div>`;
+    }
+    if (s.step === "retrieve") return `<div class="step"><b>2 · Retrieve (BM25)</b><code>query: ${esc(s.query)}\n→ ${esc(s.results.join(", ") || "nothing")}</code></div>`;
+    if (s.step === "draft") return `<div class="step"><b>3 · Draft #${s.attempt} (LLM)</b></div>`;
+    if (s.step === "verify") return s.ok
+      ? `<div class="step ok"><b>4 · Fact-check: passed</b><code>every product and number traced to catalog</code></div>`
+      : `<div class="step fail"><b>4 · Fact-check: rejected → retry</b><code>${esc(s.problems.join("\n"))}</code></div>`;
+    if (s.step === "safe_fallback") return `<div class="step warn"><b>Safe fallback</b><code>answered from catalog text only</code></div>`;
+    if (s.step === "qualify_lead") return `<div class="step"><b>5 · Lead score: ${s.score}/100 (${s.tier})</b><code>${s.saved ? "lead saved to CRM file" : "no email yet, not saved"}</code></div>`;
+    if (s.step === "off_topic") return `<div class="step warn"><b>Off topic → redirected</b></div>`;
+    return "";
+  }).join("");
+  $("#steps").innerHTML = html;
+}
+
+async function send(text) {
+  if (!text.trim()) return;
+  $("#chips").style.display = "none";
+  add("user", esc(text));
+  $("#input").value = ""; $("#send").disabled = true;
+  const wait = add("bot typing", "Thinking…");
+  try {
+    const r = await fetch("/api/chat", {method: "POST", headers: {"Content-Type": "application/json"},
+                                        body: JSON.stringify({message: text, session_id: sid})});
+    const data = await r.json();
+    wait.remove();
+    if (!r.ok) { add("err", esc(data.error || "Something went wrong")); return; }
+    sid = data.session_id; try { localStorage.setItem("advisor_sid", sid); } catch (e) {}
+    let html = esc(data.reply).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+    if (data.cards.length) html += `<div class="cards">${data.cards.map(c =>
+      `<div class="card"><b>${esc(c.name)}</b><span>${esc(c.category)}</span><span>${esc(c.price)}</span><a href="${esc(c.url)}" target="_blank" rel="noopener">View product ↗</a></div>`).join("")}</div>`;
+    html += `<div><span class="badge ${data.status}">${LABEL[data.status] || data.status}</span></div>`;
+    add("bot", html);
+    renderTrace(data.trace, data.lead);
+  } catch (e) {
+    wait.remove(); add("err", "Network error. Is the server running?");
+  } finally { $("#send").disabled = false; $("#input").focus(); }
+}
+
+$("#form").addEventListener("submit", e => { e.preventDefault(); send($("#input").value); });
+document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => send(c.textContent)));
+$("#reset").addEventListener("click", async () => {
+  await fetch("/api/reset", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({session_id: sid})});
+  sid = null; try { localStorage.removeItem("advisor_sid"); } catch (e) {}
+  location.reload();
+});
+</script>
+</body>
+</html>
