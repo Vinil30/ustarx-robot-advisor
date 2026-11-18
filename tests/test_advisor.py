@@ -155,3 +155,8 @@ def test_virtual_agents_are_grounded_and_carded(tmp_path):
               "Do you sell chatbots?", tmp_path)
     assert out["status"] == "grounded"
     assert out["recommended_ids"] == ["customer-service-ai"]
+
+
+def test_repeated_longer_name_is_not_read_as_shorter_product():
+    text = "**AGIBOT X2 Ultra**: $42,999. Leasing three X2 Ultra units costs more."
+    assert CAT.mentions_in_order(text) == ["agibot-x2-ultra"]

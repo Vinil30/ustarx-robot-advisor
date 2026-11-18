@@ -61,11 +61,10 @@ class Catalog:
         for item in sorted(self.all_by_id.values(), key=lambda r: -len(r["name"])):
             name = item["name"].lower()
             for variant in dict.fromkeys((name, name.replace("agibot ", ""))):
-                m = re.search(r"(?<![a-z0-9])" + re.escape(variant) + r"(?![a-z0-9])", low)
-                if m:
-                    hits[item["id"]] = m.start()
-                    low = low.replace(variant, " " * len(variant))   # keep positions stable
-                    break
+                for m in re.finditer(r"(?<![a-z0-9])" + re.escape(variant) + r"(?![a-z0-9])", low):
+                    hits[item["id"]] = min(hits.get(item["id"], m.start()), m.start())
+                    # Blank out every occurrence of every variant so 'X2 Ultra' is never re-read as 'X2'.
+                    low = low[:m.start()] + " " * len(variant) + low[m.end():]
         return sorted(hits, key=hits.get)
 
     def mentioned_names(self, text: str) -> set[str]:
