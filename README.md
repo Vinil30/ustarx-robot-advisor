@@ -19,19 +19,23 @@ USTARX's own catalog.
 ## How it works (LangGraph)
 
 ```
-understand ─► retrieve ─► draft ─► verify ──ok──► qualify_lead ─► reply
-     │                      ▲         │
-     │                      └─retry───┤  (fact-checker feedback, max 2 retries)
-     │                                └─still failing─► safe_fallback (catalog text only)
-     └─off topic─► polite redirect
+                     ┌─ off topic ─► polite redirect
+understand ─(intent)─┼─ small talk ─► chat (no retrieval)
+                     └─ otherwise ─► retrieve ─► select ─► draft ─► verify ──ok──► qualify_lead ─► reply
+                                                             ▲        │
+                                                             └─retry──┤ (fact-checker feedback, max 2 retries)
+                                                                      └─still failing─► safe_fallback
 ```
+
+Retrieval is **adaptive**: the agent decides whether and how to look things up instead of searching on every message.
 
 | Step | What it does | LLM or code? |
 |---|---|---|
-| understand | Extracts industry, use case, budget, quantity, buy/lease, demo request, contact into a Pydantic schema, merged across turns | LLM (structured output) |
-| retrieve | BM25 search over name, category, summary and use-case tags; top 4 products become the **only facts** the model may use | Code |
+| understand | Classifies intent (small talk, recommend, product info, compare, browse, general question, follow-up, contact details, off topic) and extracts industry, use case, budget, quantity, buy/lease, demo request, contact | LLM (structured output) |
+| retrieve | Named products → direct lookup; follow-ups → reuse products from earlier turns (memory); needs → BM25 candidates | Code |
+| select | Picks the best 1-3 products from the whole catalog using BM25 hits as hints, and flags whether they are an **exact match or only the closest alternatives** (e.g. "a robot that cooks" → delivery robot + dexterous hand) | LLM (structured output), skipped when products are named |
 | pricing | Fleet totals, 12/24-month lease cost, buy-vs-lease break-even month | **Code**, never the LLM |
-| draft | Writes the reply from the facts, max 2 recommendations, ends with one question | LLM (structured output) |
+| draft | Descriptive reply from the selected products' fact sheets: why each fits, key specs, prices, buy-vs-lease advice, one follow-up question | LLM (plain text; products are read back from the text) |
 | verify | Every product named must be in the retrieved set; every number must appear in the facts or the user's message; no price for "contact for pricing" products | **Code** (deterministic) |
 | retry / fallback | A rejected draft is rewritten with the checker's exact complaints. After 2 failed retries, answer only with catalog text | Code |
 | qualify_lead | Scores the lead 0–100 (use case, budget, quantity, demo intent, email), asks for email on demo requests, saves to `data/leads.jsonl` (stand-in for a CRM) | Code |
@@ -59,7 +63,7 @@ python app.py               # http://127.0.0.1:5055
 python -m pytest -q tests
 ```
 
-10 offline tests (no API key needed) using a scripted fake LLM against the real graph: retrieval
+19 offline tests (no API key needed) using a scripted fake LLM against the real graph: retrieval
 picks the right robot, break-even math, the verifier catches invented prices and unretrieved products,
 a hallucinated draft is retried with feedback, persistent hallucination falls back safely, and
 demo requests turn into saved leads.

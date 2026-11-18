@@ -11,6 +11,17 @@ _TOKEN = re.compile(r"[a-z0-9]+")
 _STOP = set("a an the and or for of to in on with is are be i we our my need want looking robot robots".split())
 
 
+_UNICODE_FIX = str.maketrans({
+    " ": " ", " ": " ", " ": " ", " ": " ", " ": " ", " ": " ",   # odd spaces
+    "‐": "-", "‑": "-", "‒": "-", "–": "-",                                 # odd hyphens
+})
+
+
+def normalize(text: str) -> str:
+    """LLMs often emit non-breaking spaces/hyphens ('BellaBot\\u202fPro'); map them to plain ASCII."""
+    return text.translate(_UNICODE_FIX)
+
+
 def tokenize(text: str) -> list[str]:
     return [t for t in _TOKEN.findall(text.lower()) if t not in _STOP]
 
@@ -56,7 +67,7 @@ class Catalog:
     def mentions_in_order(self, text: str) -> list[str]:
         """Ids of robots/agents named in text, in order of first appearance.
         Longest names are matched first so 'D1 Edu Pro' is not also read as 'D1 Edu'."""
-        low = text.lower()
+        low = normalize(text).lower()
         hits: dict[str, int] = {}
         for item in sorted(self.all_by_id.values(), key=lambda r: -len(r["name"])):
             name = item["name"].lower()

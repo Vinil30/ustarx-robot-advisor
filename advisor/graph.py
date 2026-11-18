@@ -24,7 +24,7 @@ from typing import Literal, Optional, Protocol, TypedDict
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
-from .catalog import Catalog, fact_sheet, price_text
+from .catalog import Catalog, fact_sheet, normalize, price_text
 from .pricing import cost_facts, cost_text
 from .verify import check_reply
 
@@ -267,7 +267,7 @@ def build_graph(llm: LLM, catalog: Catalog, leads_path: Path = LEADS_PATH):
             prompt += ("\n\nYOUR PREVIOUS DRAFT WAS REJECTED BY THE FACT CHECKER:\n- "
                        + "\n- ".join(state["problems"])
                        + f"\nPrevious draft:\n{state['reply']}\nWrite a corrected reply.")
-        reply = llm.text(DRAFT_SYSTEM, prompt).strip()
+        reply = normalize(llm.text(DRAFT_SYSTEM, prompt)).strip()
         # Which products the reply recommends is read from the text itself, not trusted from the model.
         recommended = catalog.mentions_in_order(reply)[:3]
         return {"reply": reply, "recommended_ids": recommended,

@@ -189,3 +189,10 @@ def test_demo_request_asks_for_email_then_saves_lead(tmp_path):
                "owner@example.com", tmp_path, lead=out["lead"])
     assert (tmp_path / "leads.jsonl").exists()
     assert out2["lead"]["tier"] == "hot"
+
+
+def test_names_with_unicode_spaces_and_hyphens_are_recognised(tmp_path):
+    assert CAT.mentions_in_order("the **BellaBot\u202fPro** and AGIBOT\u00a0A2\u2011W") == ["bellabot-pro", "agibot-a2-w"]
+    out = run(FakeLLM([restaurant_needs(quantity=None)], ["**BellaBot\u202fPro**: $9,900 or $825\u202f/month."]),
+              "restaurant robot", tmp_path)
+    assert out["recommended_ids"] == ["bellabot-pro"] and "\u202f" not in out["reply"]
